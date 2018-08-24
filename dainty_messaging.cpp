@@ -47,33 +47,6 @@ namespace messenger
 {
 ///////////////////////////////////////////////////////////////////////////////
 
-  struct member_t {
-    password_t       password_;
-    messenger_prio_t prio_;
-    messenger_user_t user_;
-    member_t() : prio_(0), user_(0) { }
-    member_t(messenger_prio_t prio)
-      : prio_(prio), user_(0) { }
-    member_t(const password_t& password,
-                       messenger_prio_t prio,
-                       messenger_user_t user)
-      : password_(password), prio_(prio), user_(user) { }
-  };
-  typedef std::map<messenger_name_t, messenger_member_t>
-    messenger_memberlist_t;
-
-  struct keymember_t {
-    key_t    key_;
-    member_t params_;
-    keymember_t() : key_(0) { }
-    keymember_t(const messenger_key_t& key) : key_(key) { }
-    keymember_t(const messenger_key_t& key,
-                          const messenger_member_t& params)
-    : key_(key), params_(params) { }
-  };
-  typedef std::map<messenger_name_t, keymember_t>
-    messenger_memberkeylist_t;
-
 }
       using namespace library::time;
       using namespace library::thread;

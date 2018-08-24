@@ -26,10 +26,14 @@ namespace messaging
   using named::t_explicit;
   using named::string::t_string;
 
-  //using named::bytebuf_t;
-  //typedef library::types::bytebuf_byte_t byte_t;
+  using container::bytebuf::p_bytes;
+  using container::bytebuf::P_bytes;
 
-  enum t_t_messageype {
+  enum  t_bytebuf_tag_ { };
+  using t_bytebuf = container::bytebuf::t_bytebuf<t_bytebuf_tag_, 0>;
+  using x_bytebuf = named::t_prefix<t_bytebuf>::x_;
+
+  enum t_message_type {
     MSG_NOTIFY,  // when messenger/alias becomes avaibles
     MSG_TIMEOUT, // timeout
     MSG_ALIVE,   // message that requires processing
@@ -44,7 +48,7 @@ namespace messaging
 
 ///////////////////////////////////////////////////////////////////////////////
 
-  enum  t_messenger_user_tag_ { };
+  enum  t_messenger_user_tag_ { };,
   using t_messenger_user  = named::t_messenger_user<t_messenger_user_tag_>;
 
   enum  t_messenger_key_tag_ { };
@@ -52,6 +56,9 @@ namespace messaging
 
   enum  t_messenger_name_tag_ { };
   using t_messenger_name  = t_string<t_messenger_name_tag_, 32>;
+
+  enum  t_messenger_prio_tag_ { };
+  using t_messenger_prio  = t_explicit<t_uint16, t_messenger_prio_tag_>;
 
   enum  t_message_domain_tag_ { };
   using t_message_domain  = t_explicit<t_uchar, t_message_domain_tag_>;
@@ -61,9 +68,6 @@ namespace messaging
 
   enum  t_message_version_tag_ { };
   using t_message_version = t_explicit<t_uchar, t_message_version_tag_>;
-
-  enum  t_messenger_prio_tag_ { };
-  using t_messenger_prio  = t_explicit<t_uint16, t_messenger_prio_tag_>;
 
   enum  t_multiple_of_100ms_tag_ { };
   using t_multiple_of_100ms = t_multiple<100, t_multiple_of_100ms_tag_>
@@ -87,22 +91,28 @@ namespace messaging
 
 ///////////////////////////////////////////////////////////////////////////////
 
+  class t_message;
+  using r_message = named::t_prefix<t_message>::r_;
+  using R_message = named::t_prefix<t_message>::R_;
+  using x_message = named::t_prefix<t_message>::x_;
+
   class t_message {
-    typedef bytebuf_t buf_t;
   public:
-    typedef t_messenger_key   t_key;
-    typedef t_message_version t_version;
-    typedef t_message_id      t_id;
-    typedef t_message_user    t_messenger_user;
-    typedef t_message_domain  domain_t;
-    typedef buf_t::byte_t     byte_t;
-    typedef buf_t::t_content  t_content;
+    using t_key     = t_messenger_key;
+    using t_version = t_message_version;
+    using t_id      = t_message_id;
+    using t_user    = t_message_user;
+    using t_domain  = t_message_domain;
 
     t_message();
-    explicit t_message(t_uint32);
-    explicit t_message(t_content);
+    t_message(t_n);
+    t_message(x_bytebyte);
+    t_message(R_message) = delete;
+    t_message(x_message) = delete;
 
-    t_message& operator=(t_content);
+    t_message& operator=(x_bytebuf);
+    t_message& operator=(R_message) = delete;
+    t_message& operator=(x_message) = delete;
 
     t_bool set(const t_id&, t_uint32 length, t_uint16 cnt = 0);
     t_bool get(t_id&      id,
@@ -117,33 +127,32 @@ namespace messaging
     t_bool   is_empty    () const;
     t_uint32 get_capacity() const;
 
-          byte_t*       data();
-    const byte_t*       data() const;
-    const byte_t* const_data() const;
+    p_bytes  data();
+    P_bytes  data() const;
+    P_bytes cdata() const;
 
-    t_content release();
-    t_content clone() const;
-    t_content clone(t_uint32) const;
+    t_bytebuf release();
+    t_bytebuf clone() const;
 
   private:
-    buf_t buf_;
+    t_bytebuf buf_;
   };
 
-  t_messenger_key  read_dst(const t_message&);
-  t_messenger_key  read_src(const t_message&);
-  t_message_id     read_id (const t_message&);
-  t_uint32         read_len(const t_message&);
+  t_messenger_key  read_dst(R_message);
+  t_messenger_key  read_src(R_message);
+  t_message_id     read_id (R_message);
+  t_n              read_len(R_message);
 
 ///////////////////////////////////////////////////////////////////////////////
 
   class t_notify_message : public t_message {
   public:
     t_notify_message();
-    explicit t_notify_message(t_content content) : t_message(content) {
+    t_notify_message(x_bytebuf buf) : t_message(std::move(buf)) {
     }
 
-    t_notify_message& operator=(t_content content) {
-      t_message::operator=(content);
+    t_notify_message& operator=(x_bytebuf buf) {
+      t_message::operator=(std::move(buf));
       return *this;
     }
 
@@ -159,11 +168,11 @@ namespace messaging
   class t_timeout_message : public t_message {
   public:
     t_timeout_message();
-    explicit t_timeout_message(t_content content) : t_message(content) {
+    t_timeout_message(x_bytebuf buf) : t_message(std::move(buf)) {
     }
 
-    t_timeout_message& operator=(t_content content) {
-      t_message::operator=(content);
+    t_timeout_message& operator=(x_bytebuf buf) {
+      t_message::operator=(std::move(buf));
       return *this;
     }
 
@@ -182,14 +191,14 @@ namespace messaging
       reason_messenger_noexist = 1
     };
 
-    t_message_fail(t_uint32 n) : t_message(n) {
+    t_message_fail(t_n n) : t_message(n) {
     }
 
-    explicit t_message_fail(t_content content) : t_message(content) {
+    t_message_fail(x_bytebuf buf) : t_message(std::move(buf)) {
     }
 
-    t_message_fail& operator=(t_content content) {
-      t_message::operator=(content);
+    t_message_fail& operator=(x_bytebuf buf) {
+      t_message::operator=(std::move(buf));
       return *this;
     }
 
@@ -201,12 +210,11 @@ namespace messaging
   class t_alive_message : public t_message {
   public:
     t_alive_message();
-
-    explicit t_alive_message(t_content content) : t_message(content) {
+    t_alive_message(x_bytebuf buf) : t_message(std::move(buf)) {
     }
 
-    t_alive_message& operator=(t_content content) {
-      t_message::operator=(content);
+    t_alive_message& operator=(x_bytebuf buf) {
+      t_message::operator=(std::move(buf));
       return *this;
     }
 
