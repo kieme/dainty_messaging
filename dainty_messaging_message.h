@@ -1,6 +1,33 @@
-#ifndef _DAINTY_MESSAGING_MESSAGES_H_
-#define _DAINTY_MESSAGING_MESSAGES_H_
+/******************************************************************************
 
+ MIT License
+
+ Copyright (c) 2018 kieme, frits.germs@gmx.net
+
+ Permission is hereby granted, free of charge, to any person obtaining a copy
+ of this software and associated documentation files (the "Software"), to deal
+ in the Software without restriction, including without limitation the rights
+ to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ copies of the Software, and to permit persons to whom the Software is
+ furnished to do so, subject to the following conditions:
+
+ The above copyright notice and this permission notice shall be included in all
+ copies or substantial portions of the Software.
+
+ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ SOFTWARE.
+
+******************************************************************************/
+
+#ifndef _DAINTY_MESSAGING_MESSAGE_H_
+#define _DAINTY_MESSAGING_MESSAGE_H_
+
+#include <utility>
 #include "dainty_named.h"
 #include "dainty_named_string.h"
 #include "dainty_container_bytebuf.h"
@@ -9,15 +36,17 @@ namespace dainty
 {
 namespace messaging
 {
+namespace message
+{
 ///////////////////////////////////////////////////////////////////////////////
 
+  using named::t_bool;
   using named::t_n_;
   using named::t_n;
   using named::t_validity;
   using named::VALID;
   using named::INVALID;
 
-  using named::t_bool;
   using named::t_uint64;
   using named::t_uint32;
   using named::t_int32;
@@ -26,8 +55,8 @@ namespace messaging
   using named::t_explicit;
   using named::string::t_string;
 
-  using container::bytebuf::p_bytes;
-  using container::bytebuf::P_bytes;
+  using container::bytebuf::p_byte;
+  using container::bytebuf::P_byte;
 
   enum  t_bytebuf_tag_ { };
   using t_bytebuf = container::bytebuf::t_bytebuf<t_bytebuf_tag_, 0>;
@@ -48,8 +77,8 @@ namespace messaging
 
 ///////////////////////////////////////////////////////////////////////////////
 
-  enum  t_messenger_user_tag_ { };,
-  using t_messenger_user  = named::t_messenger_user<t_messenger_user_tag_>;
+  enum  t_messenger_user_tag_ { };
+  using t_messenger_user  = named::t_user<t_messenger_user_tag_>;
 
   enum  t_messenger_key_tag_ { };
   using t_messenger_key   = t_explicit<t_uint64, t_messenger_key_tag_>;
@@ -70,7 +99,7 @@ namespace messaging
   using t_message_version = t_explicit<t_uchar, t_message_version_tag_>;
 
   enum  t_multiple_of_100ms_tag_ { };
-  using t_multiple_of_100ms = t_multiple<100, t_multiple_of_100ms_tag_>
+  using t_multiple_of_100ms = named::t_multiple<100, t_multiple_of_100ms_tag_>;
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -106,7 +135,7 @@ namespace messaging
 
     t_message();
     t_message(t_n);
-    t_message(x_bytebyte);
+    t_message(x_bytebuf);
     t_message(R_message) = delete;
     t_message(x_message) = delete;
 
@@ -124,12 +153,12 @@ namespace messaging
     operator t_bool      () const;
     operator t_validity  () const;
 
-    t_bool   is_empty    () const;
-    t_uint32 get_capacity() const;
+    t_bool  is_empty    () const;
+    t_n     get_capacity() const;
 
-    p_bytes  data();
-    P_bytes  data() const;
-    P_bytes cdata() const;
+    p_byte  data();
+    P_byte  data() const;
+    P_byte cdata() const;
 
     t_bytebuf release();
     t_bytebuf clone() const;
@@ -222,6 +251,7 @@ namespace messaging
   };
 
 ///////////////////////////////////////////////////////////////////////////////
+}
 }
 }
 

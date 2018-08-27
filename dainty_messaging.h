@@ -34,9 +34,44 @@ namespace dainty
 {
 namespace messaging
 {
+  using named::t_bool;
+  using named::t_void;
+  using named::t_n_;
+  using named::t_n;
+  using named::t_validity;
+  using named::VALID;
+  using named::INVALID;
+  using named::t_prefix;
+
+  using err::t_err;
+  using messenger::t_messenger;
+  using messenger::r_message;
+
   using t_messenger_params        = messenger::t_params;
-  using t_messenger_visibility    = messenger::t_visibility;
+  using r_messenger_params        = messenger::r_params;
   using t_messenger_create_params = messenger::t_create_params;
+  using R_messenger_create_params = messenger::R_create_params;
+  using t_messenger_visibility    = messenger::t_visibility;
+  using t_messenger_prio          = messenger::t_prio;
+  using t_messenger_key           = messenger::t_key;
+  using R_messenger_key           = messenger::R_key;
+  using t_messenger_user          = messenger::t_user;
+  using t_messenger_name          = messenger::t_name;
+  using r_messenger_name          = messenger::r_name;
+  using R_messenger_name          = messenger::R_name;
+  using R_messenger_password      = messenger::R_password;
+  using p_messenger_monitor_list  = messenger::p_monitor_list;
+  using p_messenger_group_list    = messenger::p_group_list;
+  using r_messenger_group_list    = messenger::r_group_list;
+
+  using r_messenger_visibility    = t_prefix<t_messenger_visibility>::r_;
+  using p_messenger_user          = t_prefix<t_messenger_user>::p_;
+
+///////////////////////////////////////////////////////////////////////////////
+
+  enum  t_password_tag_ { };
+  using t_password = named::string::t_string<t_password_tag_, 16>;
+  using R_password = named::t_prefix<t_password>::R_;
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -46,6 +81,13 @@ namespace messaging
     VISIBILITY_SLAVE,
     VISIBILITY_MASTER
   };
+
+  enum  t_visibility_name_tag_ { };
+  using t_visibility_name = named::string::t_string<t_visibility_name_tag_, 14>;
+
+  t_visibility_name to_name(t_visibility);
+
+///////////////////////////////////////////////////////////////////////////////
 
   enum  t_name_tag_ { };
   using t_name = named::string::t_string<t_name_tag_, 16>;
@@ -58,16 +100,19 @@ namespace messaging
     t_visibility visibility;
     t_name       name;
 
-    params_t() : visibility(VISIBILITY_OFF) {
+    t_params() : visibility(VISIBILITY_OFF) {
     }
 
-    params_t(t_visibility _visibility) : visibility(_visibility) {
+    t_params(t_visibility _visibility) : visibility(_visibility) {
     }
 
-    params_t(t_visibility visibility, R_name name)
-      : visibility_(visibility), name_(name) {
+    t_params(t_visibility _visibility, R_name _name)
+      : visibility(_visibility), name(_name) {
     }
   };
+
+  using r_params = named::t_prefix<t_params>::r_;
+  using R_params = named::t_prefix<t_params>::R_;
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -80,22 +125,25 @@ namespace messaging
 
   class t_messenger_info {
   public:
-    t_messenger_key_t  key;
-    t_messenger_name_t name;
+    t_messenger_key    key;
+    t_messenger_name   name;
     t_messenger_params params;
     t_messenger_stats  stats;
-    t_messenger_info() : key_(0) {
+    t_messenger_info() : key{0} {
     }
   };
 
+  using r_messenger_info = named::t_prefix<t_messenger_info>::r_;
+
   using t_messenger_infos = std::vector<t_messenger_info>;
+  using r_messenger_infos = named::t_prefix<t_messenger_infos>::r_;
 
 ///////////////////////////////////////////////////////////////////////////////
 
   t_bool is_running();
 
-  void_t update_params(R_params);
-  void_t fetch_params (r_params);
+  t_void update_params(R_params);
+  t_void fetch_params (r_params);
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -117,7 +165,7 @@ namespace messaging
 ///////////////////////////////////////////////////////////////////////////////
 
   // group - individual, chained, chained_revert
-  t_bool create_group(R_password, R_messenger_name, t_messenger_visibility);
+  t_bool create_group (R_password, R_messenger_name, t_messenger_visibility);
   t_bool destroy_group(R_password, R_messenger_name);
   t_bool fetch_group(R_messenger_name, r_messenger_visibility,
                      p_messenger_group_list = nullptr);

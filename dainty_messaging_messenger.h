@@ -29,10 +29,11 @@
 
 #include <map>
 #include "dainty_named.h"
+#include "dainty_os_fdbased.h"
 #include "dainty_named_string.h"
 #include "dainty_container_list.h"
 #include "dainty_messaging_err.h"
-#include "dainty_messaging_messages.h"
+#include "dainty_messaging_message.h"
 
 namespace dainty
 {
@@ -40,22 +41,35 @@ namespace messaging
 {
 namespace messenger
 {
-  using messaging::t_err;
+  using named::t_bool;
+  using named::t_n_;
+  using named::t_n;
+  using named::t_validity;
+  using named::VALID;
+  using named::INVALID;
 
-  using t_user     = messaging::t_messenger_user;
-  using t_key      = messaging::t_messenger_key;
-  using t_name     = messaging::t_messenger_name;
-  using t_prio     = messaging::t_messenger_prio;
+  using os::t_fd;
+
+  using err::t_err;
+  using message::t_message;
+  using message::r_message;
+  using message::t_multiple_of_100ms;
+
+  using t_user     = message::t_messenger_user;
+  using t_key      = message::t_messenger_key;
+  using t_name     = message::t_messenger_name;
+  using t_prio     = message::t_messenger_prio;
   using R_key      = named::t_prefix<t_key>::R_;
+  using r_name     = named::t_prefix<t_name>::r_;
   using R_name     = named::t_prefix<t_name>::R_;
   using p_user     = named::t_prefix<t_user>::p_;
-  using t_messages = conatiner::list::t_list<t_message>;
+  using t_messages = container::list::t_list<t_message>;
   using r_messages = named::t_prefix<t_messages>::r_;
 
 ///////////////////////////////////////////////////////////////////////////////
 
   enum  t_password_tag_ { };
-  using t_password = named::string::t_string_t<t_password_tag_, 16>;
+  using t_password = named::string::t_string<t_password_tag_, 16>;
   using R_password = named::t_prefix<t_password>::R_;
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -84,11 +98,12 @@ namespace messenger
     t_timer_params(t_multiple_of_100ms _factor   = t_multiple_of_100ms(0),
                    t_bool              _periodic = false,
                    t_prio              _prio     = t_prio(0),
-                   t_user              _user     = t_user(0))
+                   t_user              _user     = t_user(0L))
       : factor(_factor), periodic(_periodic), prio(_prio), user(_user) {
     }
   };
 
+  using r_timer_params = named::t_prefix<t_timer_params>::r_;
   using R_timer_params = named::t_prefix<t_timer_params>::R_;
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -100,7 +115,7 @@ namespace messenger
     t_prio     prio;
     t_user     user;
 
-    t_group() : prio(0), user(0) {
+    t_group() : prio(0), user(0L) {
     }
 
     t_group(R_name _name, R_password _password, t_prio _prio, t_user _user)
@@ -112,6 +127,7 @@ namespace messenger
   using t_group_list = std::map<t_name, t_group>;
   using r_group_list = named::t_prefix<t_group_list>::r_;
   using R_group_list = named::t_prefix<t_group_list>::R_;
+  using p_group_list = named::t_prefix<t_group_list>::p_;
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -122,17 +138,18 @@ namespace messenger
     t_user user;
     t_key  key;
 
-    t_monitor() : key(0) {
+    t_monitor() : prio{0}, user{0L}, key{0} {
     }
 
-    t_monitor(R_name _name, t_prio _prio, t_user _user)
-      : name(_name), prio(_prio), user(_user), key(_key) {
+    t_monitor(R_name _name, t_prio _prio, t_user _user, t_key _key)
+      : name{_name}, prio{_prio}, user{_user}, key{_key} {
     }
   };
 
   using t_monitor_list = std::map<t_name, t_monitor>;
   using r_monitor_list = named::t_prefix<t_monitor_list>::r_;
   using R_monitor_list = named::t_prefix<t_monitor_list>::R_;
+  using p_monitor_list = named::t_prefix<t_monitor_list>::p_;
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -152,6 +169,8 @@ namespace messenger
         timer_params(_timer_params) {
     }
   };
+
+  using R_create_params = named::t_prefix<t_create_params>::R_;
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -176,7 +195,8 @@ namespace messenger
              R_group_list        _group_list,
              R_monitor_list      _monitor_list)
       : visibility(_visibility), alive_factor(_alive_factor),
-        timer_params(_timer_params), groups(_groups), monitor(_monitor) {
+        timer_params(_timer_params), group_list(_group_list),
+        monitor_list(_monitor_list) {
     }
   };
 
@@ -187,8 +207,8 @@ namespace messenger
 
   class t_id {
   public:
-    t_key  key;
-    t_fd   fd;
+    t_key key;
+    t_fd  fd;
 
     t_id() : key(0), fd(-1) {
     }
@@ -236,13 +256,13 @@ namespace messenger
     t_bool stop_timer ();
     t_bool query_timer(r_timer_params) const;
 
-    t_bool add_to_group(R_password, R_name, prio_t = prio_t(0),
-                        user_t = user_t());
+    t_bool add_to_group(R_password, R_name, t_prio = t_prio(0),
+                        t_user = t_user());
     t_bool remove_from_group(R_password, R_name, p_user = nullptr);
     t_bool is_in_group (R_name, p_user = nullptr) const;
     t_bool get_groups  (r_group_list) const;
 
-    t_bool add_monitor   (R_name, prio_t = prio_t(0), user_t = user_t());
+    t_bool add_monitor   (R_name, t_prio = t_prio(0), t_user = t_user());
     t_bool remove_monitor(R_name, p_user = nullptr);
     t_key  is_monitored  (R_name, p_user = nullptr) const;
     t_bool get_monitored (r_monitor_list) const;
@@ -252,7 +272,7 @@ namespace messenger
     t_messenger(R_id id) : id_(id) {
     }
 
-    const t_id_t id_;
+    const t_id id_;
   };
 
 ///////////////////////////////////////////////////////////////////////////////
