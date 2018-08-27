@@ -260,6 +260,84 @@ namespace messenger
     return {};
   }
 
+  t_bool is_running() {
+    return false;
+  }
+
+  t_void update_params(R_params) {
+  }
+
+  t_void fetch_params(r_params) {
+  }
+
+  t_messenger_create_params default_messenger_create_params() {
+  }
+
+  t_messenger create_messenger(t_err, R_messenger_name,
+                               R_messenger_create_params) {
+  }
+
+  t_bool fetch_messenger(R_messenger_name, r_messenger_params) {
+    return false;
+  }
+
+  t_bool fetch_messenger(R_messenger_name, r_messenger_info,
+                         t_bool clearstats) {
+    return false;
+  }
+
+  t_bool fetch_messengers(r_messenger_infos, t_bool clearstats) {
+    return false;
+  }
+
+  t_bool create_group (R_password, R_messenger_name, t_messenger_visibility) {
+    return false;
+  }
+
+  t_bool destroy_group(R_password, R_messenger_name) {
+    return false;
+  }
+
+  t_bool fetch_group(R_messenger_name, r_messenger_visibility,
+                     p_messenger_group_list) {
+    return false;
+  }
+
+  t_bool add_messenger_to_group(R_password,
+                                R_messenger_name name,
+                                R_messenger_name group,
+                                t_messenger_prio,
+                                t_messenger_user) {
+    return false;
+  }
+
+  t_bool remove_messenger_from_group(R_password,
+                                     R_messenger_name name,
+                                     R_messenger_name group,
+                                     p_messenger_user) {
+    return false;
+  }
+
+  t_bool is_messenger_in_group (R_messenger_name name,
+                                R_messenger_name group,
+                                p_messenger_user) {
+    return false;
+  }
+
+  t_bool fetch_messenger_groups(R_messenger_name name,
+                                r_messenger_group_list) {
+    return false;
+  }
+
+  t_bool who_is(R_messenger_key, r_messenger_name, t_bool* group,
+                t_bool* local) {
+    return false;
+  }
+
+  t_bool post_message(R_messenger_key, r_message) {
+    return false;
+  }
+
 ///////////////////////////////////////////////////////////////////////////////
 }
 }

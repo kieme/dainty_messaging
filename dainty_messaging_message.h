@@ -63,10 +63,10 @@ namespace message
   using x_bytebuf = named::t_prefix<t_bytebuf>::x_;
 
   enum t_message_type {
-    MSG_NOTIFY,  // when messenger/alias becomes avaibles
-    MSG_TIMEOUT, // timeout
-    MSG_ALIVE,   // message that requires processing
-    MSG_FAIL     // when send message failed
+    MSG_NOTIFY,
+    MSG_TIMEOUT,
+    MSG_ALIVE,
+    MSG_FAIL
   };
 
   enum t_messenger_state {
