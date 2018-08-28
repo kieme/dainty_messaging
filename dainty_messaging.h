@@ -42,7 +42,6 @@ namespace messaging
   using named::VALID;
   using named::INVALID;
   using named::t_prefix;
-
   using err::t_err;
   using messenger::t_messenger;
   using messenger::r_message;
@@ -60,10 +59,10 @@ namespace messaging
   using r_messenger_name          = messenger::r_name;
   using R_messenger_name          = messenger::R_name;
   using R_messenger_password      = messenger::R_password;
+  using r_messenger_monitor_list  = messenger::r_monitor_list;
   using p_messenger_monitor_list  = messenger::p_monitor_list;
   using p_messenger_group_list    = messenger::p_group_list;
   using r_messenger_group_list    = messenger::r_group_list;
-
   using r_messenger_visibility    = t_prefix<t_messenger_visibility>::r_;
   using p_messenger_user          = t_prefix<t_messenger_user>::p_;
 
@@ -133,7 +132,6 @@ namespace messaging
     t_messenger_info() : key{0} {
     }
   };
-
   using r_messenger_info = named::t_prefix<t_messenger_info>::r_;
 
   using t_messenger_infos = std::vector<t_messenger_info>;

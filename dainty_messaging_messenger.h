@@ -263,7 +263,7 @@ namespace messenger
     t_bool get_monitored (t_err, r_monitor_list) const;
 
   private:
-    friend t_messenger create_messenger(t_err, R_name, R_create_params);
+    friend t_messenger create_messenger_(t_err&, R_name, R_create_params);
     t_messenger(R_id id) : id_(id) {
     }
 
