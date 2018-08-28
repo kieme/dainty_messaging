@@ -51,16 +51,21 @@ using dainty::mt::event_dispatcher::t_action;
 using dainty::mt::event_dispatcher::CONTINUE;
 using dainty::mt::event_dispatcher::QUIT_EVENT_LOOP;
 using dainty::mt::event_dispatcher::RD;
+using dainty::messaging::messenger::t_multiple_of_100ms;
 
-using t_thd_err       = t_thread::t_logic::t_err;
-using t_cmd_err       = command::t_processor::t_logic::t_err;
-using t_cmd_client    = command::t_client;
-using t_cmd_processor = command::t_processor;
-using t_cmd           = command::t_command;
-using t_any_user      = any::t_user;
-using t_que_chain     = waitable_chained_queue::t_chain;
-using t_que_client    = waitable_chained_queue::t_client;
-using t_que_processor = waitable_chained_queue::t_processor;
+using t_thd_err                = t_thread::t_logic::t_err;
+using t_cmd_err                = command::t_processor::t_logic::t_err;
+using t_cmd_client             = command::t_client;
+using t_cmd_processor          = command::t_processor;
+using t_cmd                    = command::t_command;
+using t_any_user               = any::t_user;
+using t_que_chain              = waitable_chained_queue::t_chain;
+using t_que_client             = waitable_chained_queue::t_client;
+using t_que_processor          = waitable_chained_queue::t_processor;
+using R_messenger_id           = dainty::messaging::messenger::R_id;
+using r_messenger_messages     = dainty::messaging::messenger::r_messages;
+using r_messenger_timer_params = dainty::messaging::messenger::r_timer_params;
+using R_messenger_timer_params = dainty::messaging::messenger::R_timer_params;
 
 namespace dainty
 {
@@ -362,6 +367,7 @@ namespace message
           case t_fetch_params_cmd_::cmd_id:
             process(err, static_cast<r_fetch_params_cmd_>(cmd));
             break;
+          //XXX
           case t_clean_death_cmd_::cmd_id:
             process(err, static_cast<r_clean_death_cmd_>(cmd));
             break;
@@ -456,31 +462,38 @@ namespace message
 
     messenger::t_id create_messenger(r_err err, R_messenger_name name,
                                      R_messenger_create_params params) {
+      //XXX
     }
 
     t_bool fetch_messenger(r_err err, R_messenger_name name,
                            r_messenger_params params) {
+      //XXX
     }
 
     t_bool fetch_messenger(r_err err, R_messenger_name name,
                            r_messenger_info info, t_bool clearstats) {
+      //XXX
     }
 
     t_bool fetch_messengers(r_err err, r_messenger_infos infos,
                             t_bool clearstats) {
+      //XXX
     }
 
     t_bool create_group(r_err err, R_password password,
                         R_messenger_name, t_messenger_visibility visibility) {
+      //XXX
     }
 
     t_bool destroy_group(r_err err, R_password password,
                          R_messenger_name name) {
+      //XXX
     }
 
     t_bool fetch_group(r_err err, R_messenger_name name,
                        r_messenger_visibility visibility,
                        p_messenger_group_list group_list) {
+      //XXX
     }
 
     t_bool add_messenger_to_group(r_err err, R_messenger_password password,
@@ -488,6 +501,7 @@ namespace message
                                   R_messenger_name group,
                                   t_messenger_prio prio,
                                   t_messenger_user user) {
+      //XXX
     }
 
     t_bool remove_messenger_from_group(r_err err,
@@ -495,80 +509,116 @@ namespace message
                                        R_messenger_name name,
                                        R_messenger_name group,
                                        p_messenger_user user) {
+      //XXX
     }
 
     t_bool is_messenger_in_group(r_err err, R_messenger_name name,
                                  R_messenger_name group,
                                  p_messenger_user user) {
+      //XXX
     }
 
     t_bool fetch_messenger_groups(r_err err, R_messenger_name name,
                                   r_messenger_group_list group_list) {
+      //XXX
     }
 
     t_bool who_is(r_err err, R_messenger_key key, r_messenger_name name,
                   t_bool* group, t_bool* local) {
+      //XXX
     }
 
     t_bool post_message(r_err err, R_messenger_key key, r_message message) {
+      //XXX
     }
 
-    t_name get_name(r_err err, messenger::R_id id) const {
+    t_name get_name(r_err err, R_messenger_id id) const {
+      //XXX
     }
 
-    t_bool get_params(r_err err, messenger::R_id id, r_params params) const {
+    t_bool get_params(r_err err, R_messenger_id id, r_params params) const {
+      //XXX
     }
 
-    t_bool update_visibility(r_err err, messenger::R_id id,
+    t_bool update_visibility(r_err err, R_messenger_id id,
                              t_visibility visibility) {
+      //XXX
     }
 
-    t_bool update_alive_period(r_err err, messenger::R_id id,
+    t_bool update_alive_period(r_err err, R_messenger_id id,
                                t_multiple_of_100ms) {
+      //XXX
     }
 
-    t_bool post_message(r_err err, messenger::R_id id, R_key, r_message) const {
+    t_bool post_message(r_err err, R_messenger_id id, R_messenger_key,
+                        r_message) const {
+      //XXX
     }
 
-    t_bool wait_message(r_err err, messenger::R_id id, r_messages) const {
+    t_bool wait_message(r_err err, R_messenger_id id,
+                        r_messenger_messages messages) const {
+      //XXX
     }
 
-    t_bool check_message(r_err err, messenger::R_id id, r_messages) const {
+    t_bool check_message(r_err err, R_messenger_id id,
+                         r_messenger_messages messages) const {
+      //XXX
     }
 
-    t_bool start_timer(r_err err, messenger::R_id id, R_timer_params) {
+    t_bool start_timer(r_err err, R_messenger_id id,
+                       R_messenger_timer_params params) {
+      //XXX
     }
 
-    t_bool stop_timer(r_err err, messenger::R_id id) {
+    t_bool stop_timer(r_err err, R_messenger_id id) {
+      //XXX
     }
 
-    t_bool query_timer(r_err err, messenger::R_id id, r_timer_params) const {
+    t_bool query_timer(r_err err, R_messenger_id id,
+                       r_messenger_timer_params params) const {
+      //XXX
     }
 
-    t_bool add_to_group(r_err err, messenger::R_id id, R_password, R_name, t_prio,
-                        t_user) {
+    t_bool add_to_group(r_err err, R_messenger_id id,
+                        R_messenger_password password, R_messenger_name name,
+                        t_messenger_prio prio, t_messenger_user user) {
+      //XXX
     }
 
-    t_bool remove_from_group(r_err err, messenger::R_id id, R_password, R_name,
-                             p_user) {
+    t_bool remove_from_group(r_err err, R_messenger_id id,
+                             R_messenger_password password,
+                             R_messenger_name group, p_user user) {
     }
 
-    t_bool is_in_group(r_err err, messenger::R_id id, R_name, p_user) const {
+    t_bool is_in_group(r_err err, R_messenger_id id,
+                       R_messenger_name group, p_messenger_user user) const {
+      //XXX
     }
 
-    t_bool get_groups(r_err err, messenger::R_id id, r_group_list) const {
+    t_bool get_groups(r_err err, R_messenger_id id,
+                      r_messenger_group_list group_list) const {
+      //XXX
     }
 
-    t_bool add_monitor(r_err err, messenger::R_id id, R_name, t_prio, t_user) {
+    t_bool add_monitor(r_err err, R_messenger_id id,
+                       R_messenger_name group, t_messenger_prio prio,
+                       t_messenger_user user) {
+      //XXX
     }
 
-    t_bool remove_monitor(r_err err, messenger::R_id id, R_name, p_user) {
+    t_bool remove_monitor(r_err err, R_messenger_id id,
+                          R_messenger_name name, p_messenger_user user) {
+      //XXX
     }
 
-    t_key is_monitored(r_err err, messenger::R_id id, R_name, p_user) const {
+    t_key is_monitored(r_err err, R_messenger_id id,
+                       R_messenger_name name, p_messenger_user user) const {
+      //XXX
     }
 
-    t_bool get_monitored(r_err err, messenger::R_id id, r_monitor_list) const {
+    t_bool get_monitored(r_err err, R_messenger_id id,
+                         r_messenger_monitor_list monitor_list) const {
+      //XXX
     }
 
     t_validity clean_death() {
@@ -620,93 +670,129 @@ namespace messenger
     return t_key{0};
   }
 
-  t_name t_messenger::get_name(t_err) const {
+  t_name t_messenger::get_name(t_err err) const {
+    ERR_GUARD(err) {
     // XXX
+    }
     return {};
   }
 
-  t_bool t_messenger::get_params(t_err, r_params) const {
+  t_bool t_messenger::get_params(t_err err, r_params params) const {
+    ERR_GUARD(err) {
     // XXX
+    }
     return false;
   }
 
-  t_bool t_messenger::update_visibility(t_err, t_visibility) {
+  t_bool t_messenger::update_visibility(t_err err, t_visibility visibility) {
+    ERR_GUARD(err) {
     // XXX
+    }
     return false;
   }
 
-  t_bool t_messenger::update_alive_period(t_err, t_multiple_of_100ms) {
+  t_bool t_messenger::update_alive_period(t_err err, t_multiple_of_100ms) {
+    ERR_GUARD(err) {
     // XXX
+    }
     return false;
   }
 
-  t_bool t_messenger::post_message(t_err, R_key, r_message) const {
+  t_bool t_messenger::post_message(t_err err, R_key, r_message) const {
+    ERR_GUARD(err) {
     // XXX
+    }
     return false;
   }
 
-  t_bool t_messenger::wait_message(t_err, r_messages) const {
+  t_bool t_messenger::wait_message(t_err err, r_messages) const {
+    ERR_GUARD(err) {
     // XXX
+    }
     return false;
   }
 
-  t_bool t_messenger::check_message(t_err, r_messages) const {
+  t_bool t_messenger::check_message(t_err err, r_messages) const {
+    ERR_GUARD(err) {
     // XXX
+    }
     return false;
   }
 
-  t_bool t_messenger::start_timer(t_err, R_timer_params) {
+  t_bool t_messenger::start_timer(t_err err, R_timer_params) {
+    ERR_GUARD(err) {
     // XXX
+    }
     return false;
   }
 
-  t_bool t_messenger::stop_timer(t_err) {
+  t_bool t_messenger::stop_timer(t_err err) {
+    ERR_GUARD(err) {
     // XXX
+    }
     return false;
   }
 
-  t_bool t_messenger::query_timer(t_err, r_timer_params) const {
+  t_bool t_messenger::query_timer(t_err err, r_timer_params) const {
+    ERR_GUARD(err) {
     // XXX
+    }
     return false;
   }
 
-  t_bool t_messenger::add_to_group(t_err, R_password, R_name, t_prio, t_user) {
+  t_bool t_messenger::add_to_group(t_err err, R_password, R_name,
+                                   t_prio, t_user) {
+    ERR_GUARD(err) {
     // XXX
+    }
     return false;
   }
 
-  t_bool t_messenger::remove_from_group(t_err, R_password, R_name, p_user) {
+  t_bool t_messenger::remove_from_group(t_err err, R_password, R_name, p_user) {
+    ERR_GUARD(err) {
     // XXX
+    }
     return false;
   }
 
-  t_bool t_messenger::is_in_group(t_err, R_name, p_user) const {
+  t_bool t_messenger::is_in_group(t_err err, R_name, p_user) const {
+    ERR_GUARD(err) {
     // XXX
+    }
     return false;
   }
 
-  t_bool t_messenger::get_groups(t_err, r_group_list) const {
+  t_bool t_messenger::get_groups(t_err err, r_group_list) const {
+    ERR_GUARD(err) {
     // XXX
+    }
     return false;
   }
 
-  t_bool t_messenger::add_monitor(t_err, R_name, t_prio, t_user) {
+  t_bool t_messenger::add_monitor(t_err err, R_name, t_prio, t_user) {
+    ERR_GUARD(err) {
     // XXX
+    }
     return false;
   }
 
-  t_bool t_messenger::remove_monitor(t_err, R_name, p_user) {
+  t_bool t_messenger::remove_monitor(t_err err, R_name, p_user) {
+    ERR_GUARD(err) {
     // XXX
+    }
     return false;
   }
 
-  t_key t_messenger::is_monitored(t_err, R_name, p_user) const {
+  t_key t_messenger::is_monitored(t_err err, R_name, p_user) const {
+    ERR_GUARD(err) {
     // XXX
+    }
     return t_key{0};
   }
 
-  t_bool t_messenger::get_monitored(t_err, r_monitor_list) const {
-    // XXX
+  t_bool t_messenger::get_monitored(t_err err, r_monitor_list) const {
+    ERR_GUARD(err) {
+    }
     return false;
   }
 }
@@ -772,42 +858,59 @@ namespace messenger
 
   t_messenger create_messenger(t_err err, R_messenger_name name,
                                R_messenger_create_params params) {
-    // XXX
+    ERR_GUARD(err) {
+      if (mr_)
+        return mr_->create_messenger(err, name, params);
+      err = err::E_XXX;
+    }
+    return messenger::t_id{};
   }
 
   t_bool fetch_messenger(t_err err, R_messenger_name name,
                          r_messenger_params params) {
+    ERR_GUARD(err) {
     // XXX
+    }
     return false;
   }
 
   t_bool fetch_messenger(t_err err, R_messenger_name name,
                          r_messenger_info info, t_bool clearstats) {
+    ERR_GUARD(err) {
     // XXX
+    }
     return false;
   }
 
   t_bool fetch_messengers(t_err err, r_messenger_infos infos,
                           t_bool clearstats) {
+    ERR_GUARD(err) {
     // XXX
+    }
     return false;
   }
 
   t_bool create_group(t_err err, R_password password, R_messenger_name name,
                       t_messenger_visibility) {
+    ERR_GUARD(err) {
     // XXX
+    }
     return false;
   }
 
   t_bool destroy_group(t_err err, R_password password, R_messenger_name name) {
+    ERR_GUARD(err) {
     // XXX
+    }
     return false;
   }
 
   t_bool fetch_group(t_err err, R_messenger_name name,
                      r_messenger_visibility visibility,
                      p_messenger_group_list group_list) {
+    ERR_GUARD(err) {
     // XXX
+    }
     return false;
   }
 
@@ -816,7 +919,9 @@ namespace messenger
                                 R_messenger_name group,
                                 t_messenger_prio prio,
                                 t_messenger_user user) {
+    ERR_GUARD(err) {
     // XXX
+    }
     return false;
   }
 
@@ -824,20 +929,26 @@ namespace messenger
                                      R_messenger_name name,
                                      R_messenger_name group,
                                      p_messenger_user user) {
+    ERR_GUARD(err) {
     // XXX
+    }
     return false;
   }
 
   t_bool is_messenger_in_group (t_err err, R_messenger_name name,
                                 R_messenger_name group,
                                 p_messenger_user user) {
+    ERR_GUARD(err) {
     // XXX
+    }
     return false;
   }
 
   t_bool fetch_messenger_groups(t_err err, R_messenger_name name,
                                 r_messenger_group_list group_list) {
+    ERR_GUARD(err) {
     // XXX
+    }
     return false;
   }
 
@@ -851,7 +962,9 @@ namespace messenger
   }
 
   t_bool post_message(t_err err, R_messenger_key key, r_message message) {
+    ERR_GUARD(err) {
     // XXX
+    }
     return false;
   }
 
