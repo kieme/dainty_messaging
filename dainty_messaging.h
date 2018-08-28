@@ -99,20 +99,21 @@ namespace messaging
   public:
     t_visibility visibility;
     t_name       name;
+    t_n          queuesize = t_n{4000};
 
-    t_params() : visibility(VISIBILITY_OFF) {
+    t_params() : visibility{VISIBILITY_OFF} {
     }
 
-    t_params(t_visibility _visibility) : visibility(_visibility) {
+    t_params(t_visibility _visibility) : visibility{_visibility} {
     }
 
-    t_params(t_visibility _visibility, R_name _name)
-      : visibility(_visibility), name(_name) {
+    t_params(t_visibility _visibility, R_name _name, t_n _queuesize)
+      : visibility{_visibility}, name{_name}, queuesize{_queuesize} {
     }
   };
-
   using r_params = named::t_prefix<t_params>::r_;
   using R_params = named::t_prefix<t_params>::R_;
+  using P_params = named::t_prefix<t_params>::P_;
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -140,10 +141,10 @@ namespace messaging
 
 ///////////////////////////////////////////////////////////////////////////////
 
-  t_bool is_running();
-
-  t_void update_params(R_params);
-  t_void fetch_params (r_params);
+  t_bool     is_running();
+  t_validity start (t_err, P_params = nullptr);
+  t_validity update(t_err, R_params);
+  t_void     fetch (t_err, r_params);
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -151,48 +152,48 @@ namespace messaging
 
 ///////////////////////////////////////////////////////////////////////////////
 
-  t_messenger create_messenger(t_err,
-                               R_messenger_name,
-                               R_messenger_create_params
-                                 = default_messenger_create_params());
+  t_messenger create_messenger(t_err, R_messenger_name,
+                                      R_messenger_create_params
+                                        = default_messenger_create_params());
 
-  t_bool fetch_messenger(R_messenger_name, r_messenger_params);
-  t_bool fetch_messenger(R_messenger_name, r_messenger_info,
-                         t_bool clearstats = false);
+  t_bool fetch_messenger(t_err, R_messenger_name, r_messenger_params);
+  t_bool fetch_messenger(t_err, R_messenger_name, r_messenger_info,
+                                t_bool clearstats = false);
 
-  t_bool fetch_messengers(r_messenger_infos, t_bool clearstats = false);
+  t_bool fetch_messengers(t_err, r_messenger_infos, t_bool clearstats = false);
 
 ///////////////////////////////////////////////////////////////////////////////
 
   // group - individual, chained, chained_revert
-  t_bool create_group (R_password, R_messenger_name, t_messenger_visibility);
-  t_bool destroy_group(R_password, R_messenger_name);
-  t_bool fetch_group(R_messenger_name, r_messenger_visibility,
-                     p_messenger_group_list = nullptr);
+  t_bool create_group (t_err, R_password, R_messenger_name,
+                              t_messenger_visibility);
+  t_bool destroy_group(t_err, R_password, R_messenger_name);
+  t_bool fetch_group  (t_err, R_messenger_name, r_messenger_visibility,
+                              p_messenger_group_list = nullptr);
 
-  t_bool add_messenger_to_group(R_password,
-                                R_messenger_name name,
-                                R_messenger_name group,
-                                t_messenger_prio = t_messenger_prio(0),
-                                t_messenger_user = t_messenger_user());
-  t_bool remove_messenger_from_group(R_password,
-                                     R_messenger_name name,
-                                     R_messenger_name group,
-                                     p_messenger_user = nullptr);
-  t_bool is_messenger_in_group (R_messenger_name name,
-                                R_messenger_name group,
-                                p_messenger_user = nullptr);
-  t_bool fetch_messenger_groups(R_messenger_name name,
-                                r_messenger_group_list);
-
-///////////////////////////////////////////////////////////////////////////////
-
-  t_bool who_is(R_messenger_key, r_messenger_name,
-                t_bool* group = nullptr, t_bool* local = nullptr);
+  t_bool add_messenger_to_group(t_err, R_messenger_password,
+                                       R_messenger_name name,
+                                       R_messenger_name group,
+                                       t_messenger_prio = t_messenger_prio(0),
+                                       t_messenger_user = t_messenger_user());
+  t_bool remove_messenger_from_group(t_err, R_messenger_password,
+                                            R_messenger_name name,
+                                            R_messenger_name group,
+                                            p_messenger_user = nullptr);
+  t_bool is_messenger_in_group (t_err, R_messenger_name name,
+                                       R_messenger_name group,
+                                       p_messenger_user = nullptr);
+  t_bool fetch_messenger_groups(t_err, R_messenger_name name,
+                                       r_messenger_group_list);
 
 ///////////////////////////////////////////////////////////////////////////////
 
-  t_bool post_message(R_messenger_key, r_message);
+  t_bool who_is(t_err, R_messenger_key, r_messenger_name,
+                       t_bool* group = nullptr, t_bool* local = nullptr);
+
+///////////////////////////////////////////////////////////////////////////////
+
+  t_bool post_message(t_err, R_messenger_key, r_message);
 
 ///////////////////////////////////////////////////////////////////////////////
 }

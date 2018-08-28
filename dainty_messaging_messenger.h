@@ -47,9 +47,7 @@ namespace messenger
   using named::t_validity;
   using named::VALID;
   using named::INVALID;
-
   using os::t_fd;
-
   using err::t_err;
   using message::t_message;
   using message::r_message;
@@ -102,7 +100,6 @@ namespace messenger
       : factor(_factor), periodic(_periodic), prio(_prio), user(_user) {
     }
   };
-
   using r_timer_params = named::t_prefix<t_timer_params>::r_;
   using R_timer_params = named::t_prefix<t_timer_params>::R_;
 
@@ -122,8 +119,8 @@ namespace messenger
       : name(_name), password(_password), prio(_prio), user(_user) {
     }
   };
+  using R_group = named::t_prefix<t_group>::R_;
 
-  using R_group      = named::t_prefix<t_group>::R_;
   using t_group_list = std::map<t_name, t_group>;
   using r_group_list = named::t_prefix<t_group_list>::r_;
   using R_group_list = named::t_prefix<t_group_list>::R_;
@@ -169,13 +166,13 @@ namespace messenger
         timer_params(_timer_params) {
     }
   };
-
   using R_create_params = named::t_prefix<t_create_params>::R_;
 
 ///////////////////////////////////////////////////////////////////////////////
 
   class t_params {
   public:
+    // queue size
     t_visibility        visibility;
     t_multiple_of_100ms alive_factor;
     t_timer_params      timer_params;
@@ -199,7 +196,6 @@ namespace messenger
         monitor_list(_monitor_list) {
     }
   };
-
   using r_params = named::t_prefix<t_params>::r_;
   using R_params = named::t_prefix<t_params>::R_;
 
@@ -220,7 +216,6 @@ namespace messenger
       return get(key) && get(fd) != -1 ? VALID : INVALID;
     }
   };
-
   using R_id = named::t_prefix<t_id>::R_;
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -242,30 +237,30 @@ namespace messenger
 
     t_fd   get_fd    () const;
     t_key  get_key   () const;
-    t_name get_name  () const;
-    t_bool get_params(r_params) const;
+    t_name get_name  (t_err) const;
+    t_bool get_params(t_err, r_params) const;
 
-    t_bool update_visibility  (t_visibility);
-    t_bool update_alive_period(t_multiple_of_100ms);
+    t_bool update_visibility  (t_err, t_visibility);
+    t_bool update_alive_period(t_err, t_multiple_of_100ms);
 
-    t_bool post_message (R_key, r_message) const;
-    t_bool wait_message (r_messages) const;
-    t_bool check_message(r_messages) const;
+    t_bool post_message (t_err, R_key, r_message) const;
+    t_bool wait_message (t_err, r_messages) const;
+    t_bool check_message(t_err, r_messages) const;
 
-    t_bool start_timer(R_timer_params);
-    t_bool stop_timer ();
-    t_bool query_timer(r_timer_params) const;
+    t_bool start_timer(t_err, R_timer_params);
+    t_bool stop_timer (t_err);
+    t_bool query_timer(t_err, r_timer_params) const;
 
-    t_bool add_to_group(R_password, R_name, t_prio = t_prio(0),
-                        t_user = t_user());
-    t_bool remove_from_group(R_password, R_name, p_user = nullptr);
-    t_bool is_in_group (R_name, p_user = nullptr) const;
-    t_bool get_groups  (r_group_list) const;
+    t_bool add_to_group     (t_err, R_password, R_name, t_prio = t_prio(0),
+                                    t_user = t_user());
+    t_bool remove_from_group(t_err, R_password, R_name, p_user = nullptr);
+    t_bool is_in_group      (t_err, R_name, p_user = nullptr) const;
+    t_bool get_groups       (t_err, r_group_list) const;
 
-    t_bool add_monitor   (R_name, t_prio = t_prio(0), t_user = t_user());
-    t_bool remove_monitor(R_name, p_user = nullptr);
-    t_key  is_monitored  (R_name, p_user = nullptr) const;
-    t_bool get_monitored (r_monitor_list) const;
+    t_bool add_monitor   (t_err, R_name, t_prio = t_prio(0), t_user = t_user());
+    t_bool remove_monitor(t_err, R_name, p_user = nullptr);
+    t_key  is_monitored  (t_err, R_name, p_user = nullptr) const;
+    t_bool get_monitored (t_err, r_monitor_list) const;
 
   private:
     friend t_messenger create_messenger(t_err, R_name, R_create_params);
