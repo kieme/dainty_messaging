@@ -232,10 +232,404 @@ namespace message
   };
   using r_fetch_params_cmd_ = t_prefix<t_fetch_params_cmd_>::r_;
 
-  //XXX
+  struct t_make_messenger_cmd_ : t_cmd {
+    constexpr static command::t_id cmd_id = 3;
+    R_messenger_name name;
+    R_messenger_create_params params;
+
+    inline
+    t_make_messenger_cmd_(R_messenger_name _name,
+                          R_messenger_create_params _params)
+      : t_cmd{cmd_id}, name(_name), params(_params) {
+    }
+  };
+  using r_make_messenger_cmd_ = t_prefix<t_make_messenger_cmd_>::r_;
+
+  struct t_destroy_messenger_cmd_ : t_cmd {
+    constexpr static command::t_id cmd_id = 4;
+    R_messenger_id id;
+
+    inline
+    t_destroy_messenger_cmd_(R_messenger_id _id) : t_cmd{cmd_id}, id(_id) {
+    }
+  };
+  using r_destroy_messenger_cmd_ = t_prefix<t_destroy_messenger_cmd_>::r_;
+
+  struct t_fetch_messenger_cmd_ : t_cmd {
+    constexpr static command::t_id cmd_id = 5;
+    R_messenger_name   name;
+    r_messenger_params params;
+
+    inline
+    t_fetch_messenger_cmd_(R_messenger_name _name, r_messenger_params _params)
+      : t_cmd{cmd_id}, name{_name}, params{_params} {
+    }
+  };
+  using r_fetch_messenger_cmd_ = t_prefix<t_fetch_messenger_cmd_>::r_;
+
+  struct t_fetch_messenger_info_cmd_ : t_cmd {
+    constexpr static command::t_id cmd_id = 6;
+    R_messenger_name name;
+    r_messenger_info info;
+    t_bool           clearstats;
+
+    inline
+    t_fetch_messenger_info_cmd_(R_messenger_name _name,
+                                r_messenger_info _info, t_bool _clearstats)
+      : t_cmd{cmd_id}, name{_name}, info{_info}, clearstats{_clearstats} {
+    }
+  };
+  using r_fetch_messenger_info_cmd_ = t_prefix<t_fetch_messenger_info_cmd_>::r_;
+
+  struct t_fetch_messengers_cmd_ : t_cmd {
+    constexpr static command::t_id cmd_id = 7;
+    r_messenger_infos infos;
+    t_bool            clearstats;
+
+    inline
+    t_fetch_messengers_cmd_(r_messenger_infos _infos, t_bool _clearstats)
+      : t_cmd{cmd_id}, infos{_infos}, clearstats{_clearstats} {
+    }
+  };
+  using r_fetch_messengers_cmd_ = t_prefix<t_fetch_messengers_cmd_>::r_;
+
+  struct t_create_group_cmd_ : t_cmd {
+    constexpr static command::t_id cmd_id = 8;
+    R_password             password;
+    R_messenger_name       name;
+    t_messenger_visibility visibility;
+
+    inline
+    t_create_group_cmd_(R_password             _password,
+                        R_messenger_name       _name,
+                        t_messenger_visibility _visibility)
+      : t_cmd{cmd_id}, password{_password}, name{_name},
+        visibility{_visibility} {
+    }
+  };
+  using r_create_group_cmd_ = t_prefix<t_create_group_cmd_>::r_;
+
+  struct t_destroy_group_cmd_ : t_cmd {
+    constexpr static command::t_id cmd_id = 9;
+    R_password       password;
+    R_messenger_name name;
+
+    inline
+    t_destroy_group_cmd_(R_password _password, R_messenger_name _name)
+      : t_cmd{cmd_id}, password{_password}, name{_name} {
+    }
+  };
+  using r_destroy_group_cmd_ = t_prefix<t_destroy_group_cmd_>::r_;
+
+  struct t_fetch_group_cmd_ : t_cmd {
+    constexpr static command::t_id cmd_id = 10;
+    R_messenger_name       name;
+    r_messenger_visibility visibility;
+    p_messenger_group_list group_list;
+
+    inline
+    t_fetch_group_cmd_(R_messenger_name       _name,
+                       r_messenger_visibility _visibility,
+                       p_messenger_group_list _group_list)
+      : t_cmd{cmd_id}, name{_name}, visibility{_visibility},
+        group_list{_group_list} {
+    }
+  };
+  using r_fetch_group_cmd_ = t_prefix<t_fetch_group_cmd_>::r_;
+
+  struct t_add_messenger_to_group_cmd_ : t_cmd {
+    constexpr static command::t_id cmd_id = 11;
+    R_messenger_password password;
+    R_messenger_name     name;
+    R_messenger_name     group;
+    t_messenger_prio     prio;
+    t_messenger_user     user;
+
+    t_add_messenger_to_group_cmd_(R_messenger_password _password,
+                                  R_messenger_name _name,
+                                  R_messenger_name _group,
+                                  t_messenger_prio _prio,
+                                  t_messenger_user _user)
+      : t_cmd{cmd_id}, password{_password}, name{_name}, group{_group},
+        prio{_prio}, user{_user} {
+    }
+  };
+  using r_add_messenger_to_group_cmd_ =
+    t_prefix<t_add_messenger_to_group_cmd_>::r_;
+
+  struct t_remove_messenger_from_group_cmd_ : t_cmd {
+    constexpr static command::t_id cmd_id = 12;
+    R_messenger_password password;
+    R_messenger_name     name;
+    R_messenger_name     group;
+    p_messenger_user     user;
+
+    inline
+    t_remove_messenger_from_group_cmd_(R_messenger_password _password,
+                                       R_messenger_name _name,
+                                       R_messenger_name _group,
+                                       p_messenger_user _user)
+      : t_cmd{cmd_id}, password{_password}, name{_name}, group{_group},
+        user{user} {
+    }
+  };
+  using r_remove_messenger_from_group_cmd_ =
+    t_prefix<t_remove_messenger_from_group_cmd_>::r_;
+
+  struct t_is_messenger_in_group_cmd_ : t_cmd {
+    constexpr static command::t_id cmd_id = 13;
+    R_messenger_name name;
+    R_messenger_name group;
+    p_messenger_user user;
+
+    inline
+    t_is_messenger_in_group_cmd_(R_messenger_name _name,
+                                 R_messenger_name _group,
+                                 p_messenger_user _user)
+      : t_cmd{cmd_id}, name{_name}, group{_group}, user{user} {
+    }
+  };
+  using r_is_messenger_in_group_cmd_ =
+    t_prefix<t_is_messenger_in_group_cmd_>::r_;
+
+  struct t_fetch_messenger_groups_cmd_ : t_cmd {
+    constexpr static command::t_id cmd_id = 14;
+    R_messenger_name       name;
+    r_messenger_group_list group_list;
+
+    inline
+    t_fetch_messenger_groups_cmd_(R_messenger_name       _name,
+                                  r_messenger_group_list _group_list)
+      : t_cmd{cmd_id}, name{_name}, group_list{_group_list} {
+    }
+  };
+  using r_fetch_messenger_cmd_ = t_prefix<t_fetch_messenger_cmd_>::r_;
+
+  struct t_who_is_cmd_ : t_cmd {
+    constexpr static command::t_id cmd_id = 15;
+    R_messenger_key  key;
+    r_messenger_name name;
+    t_bool*          group;
+    t_bool*          local;
+
+    inline
+    t_who_is_cmd_(R_messenger_key _key, r_messenger_name _name,
+                  t_bool* _group, t_bool* _local)
+      : t_cmd{cmd_id}, key{_key}, name{_name}, group{_group}, local{_local} {
+    }
+  };
+  using r_who_is_cmd_ = t_prefix<t_who_is_cmd_>::r_;
+
+  struct t_get_name_cmd_ : t_cmd {
+    constexpr static command::t_id cmd_id = 16;
+    R_messenger_id   id;
+    t_messenger_name name;
+
+    inline
+    t_get_name_cmd_(R_messenger_id _id) : t_cmd{cmd_id}, id{_id} {
+    }
+  };
+  using r_get_name_cmd_ = t_prefix<t_get_name_cmd_>::r_;
+
+  struct t_get_params_cmd_ : t_cmd {
+    constexpr static command::t_id cmd_id = 17;
+    R_messenger_id     id;
+    r_messenger_params params;
+
+    inline
+    t_get_params_cmd_(R_messenger_id _id, r_messenger_params _params)
+      : t_cmd{cmd_id}, id{_id}, params{_params} {
+    }
+  };
+  using r_get_params_cmd_ = t_prefix<t_get_params_cmd_>::r_;
+
+  struct t_update_visibility_cmd_ : t_cmd {
+    constexpr static command::t_id cmd_id = 18;
+    R_messenger_id         id;
+    t_messenger_visibility visibility;
+
+    inline
+    t_update_visibility_cmd_(R_messenger_id         _id,
+                             t_messenger_visibility _visibility)
+      : t_cmd{cmd_id}, id{_id}, visibility{_visibility} {
+    }
+  };
+  using r_update_visibility_cmd_ = t_prefix<t_update_visibility_cmd_>::r_;
+
+  struct t_update_alive_period_cmd_ : t_cmd {
+    constexpr static command::t_id cmd_id = 19;
+    R_messenger_id      id;
+    t_multiple_of_100ms multiple;
+
+    inline
+    t_update_alive_period_cmd_(R_messenger_id      _id,
+                               t_multiple_of_100ms _multiple)
+      : t_cmd{cmd_id}, id{_id}, multiple{_multiple} {
+    }
+  };
+  using r_update_alive_period_cmd_ = t_prefix<t_update_alive_period_cmd_>::r_;
+
+  struct t_start_timer_cmd_ : t_cmd {
+    constexpr static command::t_id cmd_id = 20;
+    R_messenger_id           id;
+    R_messenger_timer_params params;
+
+    inline
+    t_start_timer_cmd_(R_messenger_id _id, R_messenger_timer_params _params)
+      : t_cmd{cmd_id}, id{_id}, params{_params} {
+    }
+  };
+  using r_start_timer_cmd_ = t_prefix<t_start_timer_cmd_>::r_;
+
+  struct t_stop_timer_cmd_ : t_cmd {
+    constexpr static command::t_id cmd_id = 21;
+    R_messenger_id id;
+
+    inline
+    t_stop_timer_cmd_(R_messenger_id _id) : t_cmd{cmd_id}, id{_id} {
+    }
+  };
+  using r_stop_timer_cmd_ = t_prefix<t_stop_timer_cmd_>::r_;
+
+  struct t_query_timer_cmd_ : t_cmd {
+    constexpr static command::t_id cmd_id = 22;
+    R_messenger_id           id;
+    r_messenger_timer_params params;
+
+    inline
+    t_query_timer_cmd_(R_messenger_id _id, r_messenger_timer_params _params)
+      : t_cmd{cmd_id}, id{_id}, params{_params} {
+    }
+  };
+  using r_query_timer_cmd_ = t_prefix<t_query_timer_cmd_>::r_;
+
+  struct t_add_to_group_cmd_ : t_cmd {
+    constexpr static command::t_id cmd_id = 23;
+    R_messenger_id       id;
+    R_messenger_password password;
+    R_messenger_name     name;
+    t_messenger_prio     prio;
+    t_messenger_user     user;
+
+    inline
+    t_add_to_group_cmd_(R_messenger_id       _id,
+                        R_messenger_password _password,
+                        R_messenger_name     _name,
+                        t_messenger_prio     _prio,
+                        t_messenger_user     _user)
+     : t_cmd{cmd_id}, id{_id}, password{_password}, name{_name}, prio{_prio},
+       user{_user} {
+    }
+  };
+  using r_add_to_group_cmd_ = t_prefix<t_add_to_group_cmd_>::r_;
+
+  struct t_remove_from_group_cmd_ : t_cmd {
+    constexpr static command::t_id cmd_id = 24;
+    R_messenger_id       id;
+    R_messenger_password password;
+    R_messenger_name     group;
+    p_messenger_user     user;
+
+    inline
+    t_remove_from_group_cmd_(R_messenger_id       _id,
+                             R_messenger_password _password,
+                             R_messenger_name     _group,
+                             p_messenger_user     _user)
+     : t_cmd{cmd_id}, id{_id}, password{_password}, group{_group}, user{_user} {
+    }
+  };
+  using r_remove_from_group_cmd_ = t_prefix<t_remove_from_group_cmd_>::r_;
+
+  struct t_is_in_group_cmd_ : t_cmd {
+    constexpr static command::t_id cmd_id = 25;
+    R_messenger_id   id;
+    R_messenger_name group;
+    p_messenger_user user;
+
+    inline
+    t_is_in_group_cmd_(R_messenger_id   _id,
+                       R_messenger_name _group,
+                       p_messenger_user _user)
+      : t_cmd{cmd_id}, id{_id}, group{_group}, user{_user} {
+    }
+  };
+  using r_is_in_group_cmd_ = t_prefix<t_is_in_group_cmd_>::r_;
+
+  struct t_get_groups_cmd_ : t_cmd {
+    constexpr static command::t_id cmd_id = 26;
+    R_messenger_id id;
+    r_messenger_group_list group_list;
+
+    inline
+    t_get_groups_cmd_(R_messenger_id _id, r_messenger_group_list _group_list)
+      : t_cmd{cmd_id}, id{_id}, group_list{_group_list} {
+    }
+  };
+  using r_get_groups_cmd_ = t_prefix<t_get_groups_cmd_>::r_;
+
+  struct t_add_monitor_cmd_ : t_cmd {
+    constexpr static command::t_id cmd_id = 27;
+    R_messenger_id   id;
+    R_messenger_name group;
+    t_messenger_prio prio;
+    t_messenger_user user;
+
+    inline
+    t_add_monitor_cmd_(R_messenger_id   _id,
+                       R_messenger_name _group,
+                       t_messenger_prio _prio,
+                       t_messenger_user _user)
+      : t_cmd{cmd_id}, id{_id}, group{_group}, prio{_prio}, user{_user} {
+    }
+  };
+  using r_add_monitor_cmd_ = t_prefix<t_add_monitor_cmd_>::r_;
+
+  struct t_remove_monitor_cmd_ : t_cmd {
+    constexpr static command::t_id cmd_id = 28;
+    R_messenger_id   id;
+    R_messenger_name name;
+    p_messenger_user user;
+
+    inline
+    t_remove_monitor_cmd_(R_messenger_id   _id,
+                          R_messenger_name _name,
+                          p_messenger_user _user)
+      : t_cmd{cmd_id}, id{_id}, name{_name}, user{_user} {
+    }
+  };
+  using r_remove_monitor_cmd_ = t_prefix<t_remove_monitor_cmd_>::r_;
+
+  struct t_is_monitored_cmd_ : t_cmd {
+    constexpr static command::t_id cmd_id = 29;
+    t_messenger_key  key = t_messenger_key{0};
+    R_messenger_id   id;
+    R_messenger_name name;
+    p_messenger_user user;
+
+    inline
+    t_is_monitored_cmd_(R_messenger_id   _id,
+                        R_messenger_name _name,
+                        p_messenger_user _user)
+      : t_cmd{cmd_id}, id{_id}, name{_name}, user{_user} {
+    }
+  };
+  using r_is_monitored_cmd_ = t_prefix<t_is_monitored_cmd_>::r_;
+
+  struct t_get_monitored_cmd_ : t_cmd {
+    constexpr static command::t_id cmd_id = 30;
+    R_messenger_id           id;
+    r_messenger_monitor_list monitor_list;
+
+    inline
+    t_get_monitored_cmd_(R_messenger_id           _id,
+                         r_messenger_monitor_list _monitor_list)
+      : t_cmd{cmd_id}, id{_id}, monitor_list{_monitor_list} {
+    }
+  };
+  using r_get_monitored_cmd_ = t_prefix<t_get_monitored_cmd_>::r_;
 
   struct t_clean_death_cmd_ : t_cmd {
-    constexpr static command::t_id cmd_id = 25;
+    constexpr static command::t_id cmd_id = 31;
 
     inline
     t_clean_death_cmd_() : t_cmd{cmd_id} {
@@ -354,6 +748,91 @@ namespace message
       //XXX
     }
 
+    t_void process(err::t_err err, r_make_messenger_cmd_ cmd) noexcept {
+    }
+
+    t_void process(err::t_err err, r_destroy_messenger_cmd_ cmd) noexcept {
+    }
+
+    t_void process(err::t_err err, r_fetch_messenger_cmd_ cmd) noexcept {
+    }
+
+    t_void process(err::t_err err, r_fetch_messenger_info_cmd_ cmd) noexcept {
+    }
+
+    t_void process(err::t_err err, r_fetch_messengers_cmd_ cmd) noexcept {
+    }
+
+    t_void process(err::t_err err, r_create_group_cmd_ cmd) noexcept {
+    }
+
+    t_void process(err::t_err err, r_destroy_group_cmd_ cmd) noexcept {
+    }
+
+    t_void process(err::t_err err, r_fetch_group_cmd_ cmd) noexcept {
+    }
+
+    t_void process(err::t_err err, r_add_messenger_to_group_cmd_ cmd) noexcept {
+    }
+
+    t_void process(err::t_err err,
+                   r_remove_messenger_from_group_cmd_ cmd) noexcept {
+    }
+
+    t_void process(err::t_err err, r_is_messenger_in_group_cmd_ cmd) noexcept {
+    }
+
+    t_void process(err::t_err err, r_fetch_messenger_groups_cmd_ cmd) noexcept {
+    }
+
+    t_void process(err::t_err err, r_who_is_cmd_ cmd) noexcept {
+    }
+
+    t_void process(err::t_err err, r_get_name_cmd_ cmd) noexcept {
+    }
+
+    t_void process(err::t_err err, r_get_params_cmd_ cmd) noexcept {
+    }
+
+    t_void process(err::t_err err, r_update_visibility_cmd_ cmd) noexcept {
+    }
+
+    t_void process(err::t_err err, r_update_alive_period_cmd_ cmd) noexcept {
+    }
+
+    t_void process(err::t_err err, r_start_timer_cmd_ cmd) noexcept {
+    }
+
+    t_void process(err::t_err err, r_stop_timer_cmd_ cmd) noexcept {
+    }
+
+    t_void process(err::t_err err, r_query_timer_cmd_ cmd) noexcept {
+    }
+
+    t_void process(err::t_err err, r_add_to_group_cmd_ cmd) noexcept {
+    }
+
+    t_void process(err::t_err err, r_remove_from_group_cmd_ cmd) noexcept {
+    }
+
+    t_void process(err::t_err err, r_is_in_group_cmd_ cmd) noexcept {
+    }
+
+    t_void process(err::t_err err, r_get_groups_cmd_ cmd) noexcept {
+    }
+
+    t_void process(err::t_err err, r_add_monitor_cmd_ cmd) noexcept {
+    }
+
+    t_void process(err::t_err err, r_remove_monitor_cmd_ cmd) noexcept {
+    }
+
+    t_void process(err::t_err err, r_is_monitored_cmd_ cmd) noexcept {
+    }
+
+    t_void process(err::t_err err, r_get_monitored_cmd_ cmd) noexcept {
+    }
+
     t_void process(err::t_err err, r_clean_death_cmd_ cmd) noexcept {
       printf("thread clean_death_cmd received\n");
       action_.cmd = QUIT_EVENT_LOOP;
@@ -369,7 +848,33 @@ namespace message
           case t_fetch_params_cmd_::cmd_id:
             process(err, static_cast<r_fetch_params_cmd_>(cmd));
             break;
-          //XXX
+          case t_make_messenger_cmd_::cmd_id:
+            process(err, static_cast<r_make_messenger_cmd_>(cmd));
+            break;
+          case t_destroy_messenger_cmd_::cmd_id:
+            process(err, static_cast<r_destroy_messenger_cmd_>(cmd));
+            break;
+          case t_fetch_messenger_cmd_::cmd_id:
+            process(err, static_cast<r_fetch_messenger_cmd_>(cmd));
+            break;
+          case t_fetch_messenger_info_cmd_::cmd_id:
+            process(err, static_cast<r_fetch_messenger_info_cmd_>(cmd));
+            break;
+          case t_fetch_messengers_cmd_::cmd_id:
+            process(err, static_cast<r_fetch_messengers_cmd_>(cmd));
+            break;
+          case t_create_group_cmd_::cmd_id:
+            process(err, static_cast<r_create_group_cmd_>(cmd));
+            break;
+          case t_destroy_group_cmd_::cmd_id:
+            process(err, static_cast<r_destroy_group_cmd_>(cmd));
+            break;
+          case t_fetch_group_cmd_::cmd_id:
+            process(err, static_cast<r_fetch_group_cmd_>(cmd));
+            break;
+          case t_add_messenger_to_group_cmd_::cmd_id:
+            process(err, static_cast<r_add_messenger_to_group_cmd_>(cmd));
+            break;
           case t_clean_death_cmd_::cmd_id:
             process(err, static_cast<r_clean_death_cmd_>(cmd));
             break;
@@ -379,6 +884,67 @@ namespace message
             break;
         }
       }
+    }
+
+
+
+
+    t_void process(err::t_err err,
+                   r_remove_messenger_from_group_cmd_ cmd) noexcept {
+    }
+
+    t_void process(err::t_err err, r_is_messenger_in_group_cmd_ cmd) noexcept {
+    }
+
+    t_void process(err::t_err err, r_fetch_messenger_groups_cmd_ cmd) noexcept {
+    }
+
+    t_void process(err::t_err err, r_who_is_cmd_ cmd) noexcept {
+    }
+
+    t_void process(err::t_err err, r_get_name_cmd_ cmd) noexcept {
+    }
+
+    t_void process(err::t_err err, r_get_params_cmd_ cmd) noexcept {
+    }
+
+    t_void process(err::t_err err, r_update_visibility_cmd_ cmd) noexcept {
+    }
+
+    t_void process(err::t_err err, r_update_alive_period_cmd_ cmd) noexcept {
+    }
+
+    t_void process(err::t_err err, r_start_timer_cmd_ cmd) noexcept {
+    }
+
+    t_void process(err::t_err err, r_stop_timer_cmd_ cmd) noexcept {
+    }
+
+    t_void process(err::t_err err, r_query_timer_cmd_ cmd) noexcept {
+    }
+
+    t_void process(err::t_err err, r_add_to_group_cmd_ cmd) noexcept {
+    }
+
+    t_void process(err::t_err err, r_remove_from_group_cmd_ cmd) noexcept {
+    }
+
+    t_void process(err::t_err err, r_is_in_group_cmd_ cmd) noexcept {
+    }
+
+    t_void process(err::t_err err, r_get_groups_cmd_ cmd) noexcept {
+    }
+
+    t_void process(err::t_err err, r_add_monitor_cmd_ cmd) noexcept {
+    }
+
+    t_void process(err::t_err err, r_remove_monitor_cmd_ cmd) noexcept {
+    }
+
+    t_void process(err::t_err err, r_is_monitored_cmd_ cmd) noexcept {
+    }
+
+    t_void process(err::t_err err, r_get_monitored_cmd_ cmd) noexcept {
     }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -464,50 +1030,50 @@ namespace message
 
     t_messenger_id create_messenger(r_err err, R_messenger_name name,
                                     R_messenger_create_params params) {
-      //XXX
+      //XXX -1
       return t_messenger_id{};
     }
 
     t_void destroy_messenger(R_messenger_id id) {
-      //XXX
+      //XXX -2
     }
 
     t_bool fetch_messenger(r_err err, R_messenger_name name,
                                       r_messenger_params params) {
-      //XXX
+      //XXX -3
       return false;
     }
 
     t_bool fetch_messenger(r_err err, R_messenger_name name,
                                       r_messenger_info info,
                                       t_bool clearstats) {
-      //XXX
+      //XXX -4
       return false;
     }
 
     t_bool fetch_messengers(r_err err, r_messenger_infos infos,
                                        t_bool clearstats) {
-      //XXX
+      //XXX -5
       return false;
     }
 
     t_bool create_group(r_err err, R_password password,
                                    R_messenger_name,
                                    t_messenger_visibility visibility) {
-      //XXX
+      //XXX -6
       return false;
     }
 
     t_bool destroy_group(r_err err, R_password password,
                                     R_messenger_name name) {
-      //XXX
+      //XXX -7
       return false;
     }
 
     t_bool fetch_group(r_err err, R_messenger_name name,
                                   r_messenger_visibility visibility,
                                   p_messenger_group_list group_list) {
-      //XXX
+      //XXX -8
       return false;
     }
 
@@ -516,7 +1082,7 @@ namespace message
                                              R_messenger_name group,
                                              t_messenger_prio prio,
                                              t_messenger_user user) {
-      //XXX
+      //XXX -9
       return false;
     }
 
@@ -524,89 +1090,89 @@ namespace message
                                                   R_messenger_name name,
                                                   R_messenger_name group,
                                                   p_messenger_user user) {
-      //XXX
+      //XXX -10
       return false;
     }
 
     t_bool is_messenger_in_group(r_err err, R_messenger_name name,
                                             R_messenger_name group,
                                             p_messenger_user user) {
-      //XXX
+      //XXX -11
       return false;
     }
 
     t_bool fetch_messenger_groups(r_err err, R_messenger_name name,
                                              r_messenger_group_list group_list) {
-      //XXX
+      //XXX -12
       return false;
     }
 
     t_bool who_is(r_err err, R_messenger_key key, r_messenger_name name,
                              t_bool* group, t_bool* local) {
-      //XXX
+      //XXX -13
       return false;
     }
 
     t_bool post_message(r_err err, R_messenger_key key, r_message message) {
-      //XXX
+      //XXX -14
       return false;
     }
 
     t_messenger_name get_name(r_err err, R_messenger_id id) const {
-      //XXX
+      //XXX -15
       return {};
     }
 
     t_bool get_params(r_err err, R_messenger_id id,
                       r_messenger_params params) const {
-      //XXX
+      //XXX -16
       return false;
     }
 
     t_bool update_visibility(r_err err, R_messenger_id id,
                                         t_messenger_visibility visibility) {
-      //XXX
+      //XXX -17
       return false;
     }
 
     t_bool update_alive_period(r_err err, R_messenger_id id,
                                           t_multiple_of_100ms) {
-      //XXX
+      //XXX -18
       return false;
     }
 
     t_bool post_message(r_err err, R_messenger_id id, R_messenger_key,
                                    r_message) const {
-      //XXX
+      //XXX -19
       return false;
     }
 
     t_bool wait_message(r_err err, R_messenger_id id,
                                    r_messenger_messages messages) const {
-      //XXX
+      //XXX -20
       return false;
     }
 
     t_bool check_message(r_err err, R_messenger_id id,
                                     r_messenger_messages messages) const {
-      //XXX
+      //XXX -21
       return false;
     }
 
     t_bool start_timer(r_err err, R_messenger_id id,
                                   R_messenger_timer_params params) {
-      //XXX
+      //XXX -22
       return false;
     }
 
     t_bool stop_timer(r_err err, R_messenger_id id) {
-      //XXX
+      //XXX -23
       return false;
     }
 
     t_bool query_timer(r_err err, R_messenger_id id,
                                   r_messenger_timer_params params) const {
-      //XXX
+      //XXX -24
       return false;
     }
 
@@ -615,7 +1181,7 @@ namespace message
                                    R_messenger_name name,
                                    t_messenger_prio prio,
                                    t_messenger_user user) {
-      //XXX
+      //XXX -25
       return false;
     }
 
@@ -623,46 +1189,47 @@ namespace message
                                         R_messenger_password password,
                                         R_messenger_name group,
                                         p_messenger_user user) {
+      //XXX -26
       return false;
     }
 
     t_bool is_in_group(r_err err, R_messenger_id id,
                                   R_messenger_name group,
                                   p_messenger_user user) const {
-      //XXX
+      //XXX -27
       return false;
     }
 
     t_bool get_groups(r_err err, R_messenger_id id,
                                  r_messenger_group_list group_list) const {
-      //XXX
+      //XXX -28
       return false;
     }
 
     t_bool add_monitor(r_err err, R_messenger_id id,
                        R_messenger_name group, t_messenger_prio prio,
                        t_messenger_user user) {
-      //XXX
+      //XXX -29
       return false;
     }
 
     t_bool remove_monitor(r_err err, R_messenger_id id,
                                      R_messenger_name name,
                                      p_messenger_user user) {
-      //XXX
+      //XXX -30
       return false;
     }
 
     t_messenger_key is_monitored(r_err err, R_messenger_id id,
                                             R_messenger_name name,
                                             p_messenger_user user) const {
-      //XXX
+      //XXX -31
       return t_messenger_key{0};
     }
 
     t_bool get_monitored(r_err err, R_messenger_id id,
                          r_messenger_monitor_list monitor_list) const {
-      //XXX
+      //XXX -32
       return false;
     }
 
