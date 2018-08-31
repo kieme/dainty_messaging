@@ -1320,8 +1320,11 @@ namespace message
 namespace messenger
 {
   t_visibility_name to_name(t_visibility) {
-    // XXX
-    return {};
+    const char* tbl_[] = { "visibility_off",
+                           "visibility_process",
+                           "visibility_node",
+                           "visibility_system" };
+    return P_cstr{tbl_[visibility]};
   }
 
   t_messenger mk_(R_id id) {
@@ -1523,9 +1526,9 @@ namespace messenger
 
   t_visibility_name to_name(t_visibility visibility) {
     const char* tbl_[] = { "visibility_off",
-                           "visibility_process",
-                           "visibility_node",
-                           "visibility_system" };
+                           "visibility_local",
+                           "visibility_slave",
+                           "visibility_master" };
     return P_cstr{tbl_[visibility]};
   }
 
