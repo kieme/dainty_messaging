@@ -42,7 +42,7 @@ namespace messaging
 namespace messenger
 {
   using named::t_bool;
-  using named::t_n_;
+  using named::t_void;
   using named::t_n;
   using named::t_validity;
   using named::VALID;
@@ -238,29 +238,29 @@ namespace messenger
     t_fd   get_fd    () const;
     t_key  get_key   () const;
     t_name get_name  (t_err) const;
-    t_bool get_params(t_err, r_params) const;
+    t_void get_params(t_err, r_params) const;
 
-    t_bool update_visibility  (t_err, t_visibility);
-    t_bool update_alive_period(t_err, t_multiple_of_100ms);
+    t_void update_visibility  (t_err, t_visibility);
+    t_void update_alive_period(t_err, t_multiple_of_100ms);
 
-    t_bool post_message (t_err, R_key, r_message) const;
-    t_bool wait_message (t_err, r_messages) const;
-    t_bool check_message(t_err, r_messages) const;
+    t_void post_message (t_err, R_key, r_message) const;
+    t_void wait_message (t_err, r_messages) const;
+    t_void check_message(t_err, r_messages) const;
 
-    t_bool start_timer(t_err, R_timer_params);
-    t_bool stop_timer (t_err);
-    t_bool query_timer(t_err, r_timer_params) const;
+    t_void start_timer(t_err, R_timer_params);
+    t_void stop_timer (t_err);
+    t_void query_timer(t_err, r_timer_params) const;
 
-    t_bool add_to_group     (t_err, R_password, R_name, t_prio = t_prio(0),
+    t_void add_to_group     (t_err, R_password, R_name, t_prio = t_prio(0),
                                     t_user = t_user());
-    t_bool remove_from_group(t_err, R_password, R_name, p_user = nullptr);
+    t_void remove_from_group(t_err, R_password, R_name, p_user = nullptr);
     t_bool is_in_group      (t_err, R_name, p_user = nullptr) const;
-    t_bool get_groups       (t_err, r_group_list) const;
+    t_void get_groups       (t_err, r_group_list) const;
 
-    t_bool add_monitor   (t_err, R_name, t_prio = t_prio(0), t_user = t_user());
-    t_bool remove_monitor(t_err, R_name, p_user = nullptr);
+    t_void add_monitor   (t_err, R_name, t_prio = t_prio(0), t_user = t_user());
+    t_void remove_monitor(t_err, R_name, p_user = nullptr);
     t_key  is_monitored  (t_err, R_name, p_user = nullptr) const;
-    t_bool get_monitored (t_err, r_monitor_list) const;
+    t_void get_monitored (t_err, r_monitor_list) const;
 
   private:
     friend t_messenger mk_(R_id);
