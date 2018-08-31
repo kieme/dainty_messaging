@@ -42,14 +42,15 @@ namespace messaging
   using named::VALID;
   using named::INVALID;
   using named::t_prefix;
+
   using err::t_err;
+
+  using messenger::t_multiple_of_100ms;
   using messenger::t_messenger;
   using messenger::r_message;
 
   using t_messenger_params        = messenger::t_params;
   using r_messenger_params        = messenger::r_params;
-  using t_messenger_create_params = messenger::t_create_params;
-  using R_messenger_create_params = messenger::R_create_params;
   using t_messenger_visibility    = messenger::t_visibility;
   using t_messenger_prio          = messenger::t_prio;
   using t_messenger_key           = messenger::t_key;
@@ -63,8 +64,36 @@ namespace messaging
   using p_messenger_monitor_list  = messenger::p_monitor_list;
   using p_messenger_group_list    = messenger::p_group_list;
   using r_messenger_group_list    = messenger::r_group_list;
+  using t_messenger_timer_params  = messenger::t_timer_params;
+  using R_messenger_timer_params  = messenger::R_timer_params;
   using r_messenger_visibility    = t_prefix<t_messenger_visibility>::r_;
   using p_messenger_user          = t_prefix<t_messenger_user>::p_;
+
+///////////////////////////////////////////////////////////////////////////////
+
+  class t_messenger_create_params {
+  public:
+    t_messenger_visibility   visibility;
+    t_multiple_of_100ms      alive_factor;
+    t_messenger_timer_params timer_params;
+
+    t_messenger_create_params()
+      : visibility(messenger::VISIBILITY_PROCESS), alive_factor(0) {
+    }
+
+    t_messenger_create_params(t_messenger_visibility _visibility)
+      : visibility(_visibility), alive_factor(0) {
+    }
+
+    t_messenger_create_params(t_messenger_visibility   _visibility,
+                              t_multiple_of_100ms      _alive_factor,
+                              R_messenger_timer_params _timer_params)
+      : visibility(_visibility), alive_factor(_alive_factor),
+        timer_params(_timer_params) {
+    }
+  };
+  using R_messenger_create_params =
+    named::t_prefix<t_messenger_create_params>::R_;
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -156,15 +185,13 @@ namespace messaging
   t_messenger create_messenger(t_err, R_messenger_name,
                                       R_messenger_create_params
                                         = default_messenger_create_params());
-
-  t_bool is_messenger    (t_err, R_messenger_name, r_messenger_params);
-  t_bool is_messenger    (t_err, R_messenger_name, r_messenger_info,
-                                 t_bool clearstats = false);
+  t_bool is_messenger(t_err, R_messenger_name, r_messenger_params);
+  t_bool is_messenger(t_err, R_messenger_name, r_messenger_info,
+                             t_bool clearstats = false);
   t_void fetch_messengers(t_err, r_messenger_infos, t_bool clearstats = false);
 
 ///////////////////////////////////////////////////////////////////////////////
 
-  // group - individual, chained, chained_revert
   t_void create_group (t_err, R_password, R_messenger_name,
                               t_messenger_visibility);
   t_void destroy_group(t_err, R_password, R_messenger_name);

@@ -749,128 +749,158 @@ namespace message
     }
 
     t_void process(err::t_err err, r_update_params_cmd_ cmd) noexcept {
+      printf("thread process: r_update_params_cmd_\n");
       //XXX-1
     }
 
     t_void process(err::t_err err, r_fetch_params_cmd_ cmd) noexcept {
+      printf("thread process: r_fetch_params_cmd_\n");
       //XXX-2
     }
 
     t_void process(err::t_err err, r_make_messenger_cmd_ cmd) noexcept {
+      printf("thread process: r_make_messenger_cmd_\n");
       //XXX-3
     }
 
     t_void process(err::t_err err, r_destroy_messenger_cmd_ cmd) noexcept {
+      printf("thread process: r_destroy_messenger_cmd_\n");
       //XXX-4
     }
 
     t_void process(err::t_err err, r_is_messenger_cmd_ cmd) noexcept {
+      printf("thread process: r_is_messenger_cmd_\n");
       //XXX-5
     }
 
     t_void process(err::t_err err, r_is_messenger_info_cmd_ cmd) noexcept {
+      printf("thread process: r_is_messenger_info_cmd_\n");
       //XXX-6
     }
 
     t_void process(err::t_err err, r_fetch_messengers_cmd_ cmd) noexcept {
+      printf("thread process: r_fetch_messengers_cmd_\n");
       //XXX-7
     }
 
     t_void process(err::t_err err, r_create_group_cmd_ cmd) noexcept {
+      printf("thread process: r_create_group_cmd_\n");
       //XXX-8
     }
 
     t_void process(err::t_err err, r_destroy_group_cmd_ cmd) noexcept {
+      printf("thread process: r_destroy_group_cmd_\n");
       //XXX-9
     }
 
     t_void process(err::t_err err, r_is_group_cmd_ cmd) noexcept {
+      printf("thread process: r_is_group_cmd_\n");
       //XXX-10
     }
 
     t_void process(err::t_err err, r_add_messenger_to_group_cmd_ cmd) noexcept {
+      printf("thread process: r_add_messenger_to_group_cmd_\n");
       //XXX-11
     }
 
     t_void process(err::t_err err,
                    r_remove_messenger_from_group_cmd_ cmd) noexcept {
+      printf("thread process: r_remove_messenger_from_group_cmd_\n");
       //XXX-12
     }
 
     t_void process(err::t_err err, r_is_messenger_in_group_cmd_ cmd) noexcept {
+      printf("thread process: r_is_messenger_in_group_cmd_\n");
       //XXX-13
     }
 
     t_void process(err::t_err err, r_fetch_messenger_groups_cmd_ cmd) noexcept {
+      printf("thread process: r_fetch_messenger_groups_cmd_\n");
       //XXX-14
     }
 
     t_void process(err::t_err err, r_who_is_cmd_ cmd) noexcept {
+      printf("thread process: r_who_is_cmd_\n");
       //XXX-15
     }
 
     t_void process(err::t_err err, r_get_name_cmd_ cmd) noexcept {
+      printf("thread process: r_get_name_cmd_\n");
       //XXX-16
     }
 
     t_void process(err::t_err err, r_get_params_cmd_ cmd) noexcept {
+      printf("thread process: r_get_params_cmd_\n");
       //XXX-17
     }
 
     t_void process(err::t_err err, r_update_visibility_cmd_ cmd) noexcept {
+      printf("thread process: r_update_visibility_cmd_\n");
       //XXX-18
     }
 
     t_void process(err::t_err err, r_update_alive_period_cmd_ cmd) noexcept {
+      printf("thread process: r_update_alive_period_cmd_\n");
       //XXX-19
     }
 
     t_void process(err::t_err err, r_start_timer_cmd_ cmd) noexcept {
+      printf("thread process: r_start_timer_cmd_\n");
       //XXX-20
     }
 
     t_void process(err::t_err err, r_stop_timer_cmd_ cmd) noexcept {
+      printf("thread process: r_stop_timer_cmd_\n");
       //XXX-21
     }
 
     t_void process(err::t_err err, r_query_timer_cmd_ cmd) noexcept {
+      printf("thread process: r_query_timer_cmd_\n");
       //XXX-22
     }
 
     t_void process(err::t_err err, r_add_to_group_cmd_ cmd) noexcept {
+      printf("thread process: r_add_to_group_cmd_\n");
       //XXX-23
     }
 
     t_void process(err::t_err err, r_remove_from_group_cmd_ cmd) noexcept {
+      printf("thread process: r_remove_from_group_cmd_\n");
       //XXX-24
     }
 
     t_void process(err::t_err err, r_is_in_group_cmd_ cmd) noexcept {
+      printf("thread process: r_is_in_group_cmd_\n");
       //XXX-25
     }
 
     t_void process(err::t_err err, r_get_groups_cmd_ cmd) noexcept {
+      printf("thread process: r_get_groups_cmd_\n");
       //XXX-26
     }
 
     t_void process(err::t_err err, r_add_monitor_cmd_ cmd) noexcept {
+      printf("thread process: r_add_monitor_cmd_\n");
       //XXX-27
     }
 
     t_void process(err::t_err err, r_remove_monitor_cmd_ cmd) noexcept {
+      printf("thread process: r_remove_monitor_cmd_\n");
       //XXX-28
     }
 
     t_void process(err::t_err err, r_is_monitored_cmd_ cmd) noexcept {
+      printf("thread process: r_is_monitored_cmd_\n");
       //XXX-29
     }
 
     t_void process(err::t_err err, r_get_monitored_cmd_ cmd) noexcept {
+      printf("thread process: r_get_monitored_cmd_\n");
       //XXX-30
     }
 
     t_void process(err::t_err err, r_clean_death_cmd_ cmd) noexcept {
-      printf("thread clean_death_cmd received\n");
+      printf("thread process: r_clean_death_cmd_\n");
       action_.cmd = QUIT_EVENT_LOOP;
     }
 
@@ -972,7 +1002,6 @@ namespace message
             process(err, static_cast<r_clean_death_cmd_>(cmd));
             break;
           default:
-            // made a mess
             // XXX- 16
             break;
         }
@@ -1150,10 +1179,6 @@ namespace message
       return cmd.found;
     }
 
-    t_void post_message(r_err err, R_messenger_key key, r_message message) {
-      //XXX -14
-    }
-
     t_messenger_name get_name(r_err err, R_messenger_id id) {
       t_get_name_cmd_ cmd{id};
       cmd_client_.request(err, cmd);
@@ -1176,6 +1201,10 @@ namespace message
                                t_multiple_of_100ms multiple) {
       t_update_alive_period_cmd_ cmd{id, multiple};
       cmd_client_.request(err, cmd);
+    }
+
+    t_void post_message(r_err err, R_messenger_key key, r_message message) {
+      //XXX -14
     }
 
     t_void post_message(r_err err, R_messenger_id id, R_messenger_key,
@@ -1269,9 +1298,9 @@ namespace message
       cmd_client_.request(err, cmd);
     }
 
-    t_validity clean_death() {
+    t_void clean_death() {
       t_clean_death_cmd_ cmd;
-      return cmd_client_.request(cmd);
+      cmd_client_.request(cmd);
     }
 
   private:
@@ -1493,13 +1522,17 @@ namespace messenger
 ///////////////////////////////////////////////////////////////////////////////
 
   t_visibility_name to_name(t_visibility visibility) {
-    // XXX
-    return {};
+    const char* tbl_[] = { "visibility_off",
+                           "visibility_process",
+                           "visibility_node",
+                           "visibility_system" };
+    return P_cstr{tbl_[visibility]};
   }
 
   t_messenger_create_params default_messenger_create_params() {
-    // XXX
-    return {};
+    return {messenger::VISIBILITY_PROCESS,
+            t_multiple_of_100ms{2},
+            R_messenger_timer_params{}};
   }
 
   t_void start(t_err err, P_params params) {
