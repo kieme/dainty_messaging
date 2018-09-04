@@ -677,15 +677,12 @@ namespace message
       return que_processor_.make_client(waitable_chained_queue::t_user{0L});
     }
 
-    virtual t_validity update(t_thd_err err,
-                              r_pthread_attr) noexcept override {
+    virtual t_void update(t_thd_err err, r_pthread_attr) noexcept override {
       printf("thread update - before thread is created\n");
-      return VALID;
     }
 
-    virtual t_validity prepare(t_thd_err err) noexcept override {
+    virtual t_void prepare(t_thd_err err) noexcept override {
       printf("thread prepare - after thread is created\n");
-      return VALID;
     }
 
     virtual p_void run() noexcept override {
@@ -1079,9 +1076,9 @@ namespace message
         thread_    {err, P_cstr{"messaging"}, &logic_, false} {
     }
 
-    t_validity update(r_err err, R_params params) {
+    t_void update(r_err err, R_params params) {
       t_update_params_cmd_ cmd{params};
-      return cmd_client_.request(err, cmd);
+      cmd_client_.request(err, cmd);
     }
 
     t_void fetch(r_err err, r_params params) {
@@ -1098,7 +1095,8 @@ namespace message
 
     t_void destroy_messenger(R_messenger_id id) {
       t_destroy_messenger_cmd_ cmd{id};
-      cmd_client_.request(cmd);
+      t_err err; //XXX
+      cmd_client_.request(err, cmd);
     }
 
     t_bool is_messenger(r_err err, R_messenger_name name,
@@ -1300,7 +1298,8 @@ namespace message
 
     t_void clean_death() {
       t_clean_death_cmd_ cmd;
-      cmd_client_.request(cmd);
+      t_err err; //XXX
+      cmd_client_.request(err, cmd);
     }
 
   private:
@@ -1319,7 +1318,7 @@ namespace message
 
 namespace messenger
 {
-  t_visibility_name to_name(t_visibility) {
+  t_visibility_name to_name(t_visibility visibility) {
     const char* tbl_[] = { "visibility_off",
                            "visibility_process",
                            "visibility_node",
