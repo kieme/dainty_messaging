@@ -29,7 +29,6 @@
 
 #include <map>
 #include "dainty_named.h"
-#include "dainty_os_fdbased.h"
 #include "dainty_named_string.h"
 #include "dainty_container_list.h"
 #include "dainty_messaging_err.h"
@@ -49,7 +48,7 @@ namespace messenger
   using named::string::t_string;
   using named::VALID;
   using named::INVALID;
-  using os::t_fd;
+  using named::t_fd;
   using err::t_err;
   using message::t_message;
   using message::r_message;
