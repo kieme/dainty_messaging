@@ -39,12 +39,11 @@ namespace messaging
   using named::t_n_;
   using named::t_n;
   using named::t_validity;
+  using named::string::t_string;
+  using named::t_prefix;
   using named::VALID;
   using named::INVALID;
-  using named::t_prefix;
-
   using err::t_err;
-
   using messenger::t_multiple_of_100ms;
   using messenger::t_messenger;
   using messenger::r_message;
@@ -92,14 +91,13 @@ namespace messaging
         timer_params(_timer_params) {
     }
   };
-  using R_messenger_create_params =
-    named::t_prefix<t_messenger_create_params>::R_;
+  using R_messenger_create_params = t_prefix<t_messenger_create_params>::R_;
 
 ///////////////////////////////////////////////////////////////////////////////
 
   enum  t_password_tag_ { };
-  using t_password = named::string::t_string<t_password_tag_, 16>;
-  using R_password = named::t_prefix<t_password>::R_;
+  using t_password = t_string<t_password_tag_, 16>;
+  using R_password = t_prefix<t_password>::R_;
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -111,15 +109,15 @@ namespace messaging
   };
 
   enum  t_visibility_name_tag_ { };
-  using t_visibility_name = named::string::t_string<t_visibility_name_tag_, 14>;
+  using t_visibility_name = t_string<t_visibility_name_tag_, 14>;
 
   t_visibility_name to_name(t_visibility);
 
 ///////////////////////////////////////////////////////////////////////////////
 
   enum  t_name_tag_ { };
-  using t_name = named::string::t_string<t_name_tag_, 16>;
-  using R_name = named::t_prefix<t_name>::R_;
+  using t_name = t_string<t_name_tag_, 16>;
+  using R_name = t_prefix<t_name>::R_;
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -139,9 +137,9 @@ namespace messaging
       : visibility{_visibility}, name{_name}, queuesize{_queuesize} {
     }
   };
-  using r_params = named::t_prefix<t_params>::r_;
-  using R_params = named::t_prefix<t_params>::R_;
-  using P_params = named::t_prefix<t_params>::P_;
+  using r_params = t_prefix<t_params>::r_;
+  using R_params = t_prefix<t_params>::R_;
+  using P_params = t_prefix<t_params>::P_;
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -163,10 +161,10 @@ namespace messaging
     t_messenger_info() : key{0} {
     }
   };
-  using r_messenger_info = named::t_prefix<t_messenger_info>::r_;
+  using r_messenger_info = t_prefix<t_messenger_info>::r_;
 
   using t_messenger_infos = std::vector<t_messenger_info>;
-  using r_messenger_infos = named::t_prefix<t_messenger_infos>::r_;
+  using r_messenger_infos = t_prefix<t_messenger_infos>::r_;
 
 ///////////////////////////////////////////////////////////////////////////////
 

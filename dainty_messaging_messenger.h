@@ -45,6 +45,8 @@ namespace messenger
   using named::t_void;
   using named::t_n;
   using named::t_validity;
+  using named::t_prefix;
+  using named::string::t_string;
   using named::VALID;
   using named::INVALID;
   using os::t_fd;
@@ -57,18 +59,18 @@ namespace messenger
   using t_key      = message::t_messenger_key;
   using t_name     = message::t_messenger_name;
   using t_prio     = message::t_messenger_prio;
-  using R_key      = named::t_prefix<t_key>::R_;
-  using r_name     = named::t_prefix<t_name>::r_;
-  using R_name     = named::t_prefix<t_name>::R_;
-  using p_user     = named::t_prefix<t_user>::p_;
+  using R_key      = t_prefix<t_key>::R_;
+  using r_name     = t_prefix<t_name>::r_;
+  using R_name     = t_prefix<t_name>::R_;
+  using p_user     = t_prefix<t_user>::p_;
   using t_messages = container::list::t_list<t_message>;
-  using r_messages = named::t_prefix<t_messages>::r_;
+  using r_messages = t_prefix<t_messages>::r_;
 
 ///////////////////////////////////////////////////////////////////////////////
 
   enum  t_password_tag_ { };
-  using t_password = named::string::t_string<t_password_tag_, 16>;
-  using R_password = named::t_prefix<t_password>::R_;
+  using t_password = t_string<t_password_tag_, 16>;
+  using R_password = t_prefix<t_password>::R_;
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -80,7 +82,7 @@ namespace messenger
   };
 
   enum  t_visibility_name_tag_ { };
-  using t_visibility_name = named::string::t_string<t_visibility_name_tag_, 14>;
+  using t_visibility_name = t_string<t_visibility_name_tag_, 14>;
 
   t_visibility_name to_name(t_visibility);
 
@@ -100,8 +102,8 @@ namespace messenger
       : factor(_factor), periodic(_periodic), prio(_prio), user(_user) {
     }
   };
-  using r_timer_params = named::t_prefix<t_timer_params>::r_;
-  using R_timer_params = named::t_prefix<t_timer_params>::R_;
+  using r_timer_params = t_prefix<t_timer_params>::r_;
+  using R_timer_params = t_prefix<t_timer_params>::R_;
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -119,12 +121,12 @@ namespace messenger
       : name(_name), password(_password), prio(_prio), user(_user) {
     }
   };
-  using R_group = named::t_prefix<t_group>::R_;
+  using R_group = t_prefix<t_group>::R_;
 
   using t_group_list = std::map<t_name, t_group>;
-  using r_group_list = named::t_prefix<t_group_list>::r_;
-  using R_group_list = named::t_prefix<t_group_list>::R_;
-  using p_group_list = named::t_prefix<t_group_list>::p_;
+  using r_group_list = t_prefix<t_group_list>::r_;
+  using R_group_list = t_prefix<t_group_list>::R_;
+  using p_group_list = t_prefix<t_group_list>::p_;
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -144,9 +146,9 @@ namespace messenger
   };
 
   using t_monitor_list = std::map<t_name, t_monitor>;
-  using r_monitor_list = named::t_prefix<t_monitor_list>::r_;
-  using R_monitor_list = named::t_prefix<t_monitor_list>::R_;
-  using p_monitor_list = named::t_prefix<t_monitor_list>::p_;
+  using r_monitor_list = t_prefix<t_monitor_list>::r_;
+  using R_monitor_list = t_prefix<t_monitor_list>::R_;
+  using p_monitor_list = t_prefix<t_monitor_list>::p_;
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -176,8 +178,8 @@ namespace messenger
         monitor_list(_monitor_list) {
     }
   };
-  using r_params = named::t_prefix<t_params>::r_;
-  using R_params = named::t_prefix<t_params>::R_;
+  using r_params = t_prefix<t_params>::r_;
+  using R_params = t_prefix<t_params>::R_;
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -196,14 +198,14 @@ namespace messenger
       return get(key) && get(fd) != -1 ? VALID : INVALID;
     }
   };
-  using R_id = named::t_prefix<t_id>::R_;
+  using R_id = t_prefix<t_id>::R_;
 
 ///////////////////////////////////////////////////////////////////////////////
 
   class t_messenger;
-  using r_messenger = named::t_prefix<t_messenger>::r_;
-  using R_messenger = named::t_prefix<t_messenger>::R_;
-  using x_messenger = named::t_prefix<t_messenger>::x_;
+  using r_messenger = t_prefix<t_messenger>::r_;
+  using R_messenger = t_prefix<t_messenger>::R_;
+  using x_messenger = t_prefix<t_messenger>::x_;
 
   class t_messenger {
   public:
