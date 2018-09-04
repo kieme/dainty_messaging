@@ -150,26 +150,6 @@ namespace messenger
 
 ///////////////////////////////////////////////////////////////////////////////
 
-  class t_create_params {
-  public:
-    t_visibility        visibility;
-    t_multiple_of_100ms alive_factor;
-    t_timer_params      timer_params;
-
-    t_create_params() : visibility(VISIBILITY_PROCESS), alive_factor(0) {
-    }
-
-    t_create_params(t_visibility        _visibility,
-                    t_multiple_of_100ms _alive_factor = t_multiple_of_100ms(0),
-                    R_timer_params      _timer_params = t_timer_params())
-      : visibility(_visibility), alive_factor(_alive_factor),
-        timer_params(_timer_params) {
-    }
-  };
-  using R_create_params = named::t_prefix<t_create_params>::R_;
-
-///////////////////////////////////////////////////////////////////////////////
-
   class t_params {
   public:
     // queue size
