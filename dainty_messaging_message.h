@@ -109,6 +109,7 @@ namespace message
     using t_user    = t_message_user;
     using t_version = t_message_version;
 
+    inline
     t_message_id(t_domain _domain, t_user _user, t_version _version)
       : domain(_domain), user(_user), version(_version) {
     }
@@ -177,9 +178,12 @@ namespace message
   class t_notify_message : public t_message {
   public:
     t_notify_message();
+
+    inline
     t_notify_message(x_bytebuf buf) : t_message(std::move(buf)) {
     }
 
+    inline
     t_notify_message& operator=(x_bytebuf buf) {
       t_message::operator=(std::move(buf));
       return *this;
@@ -197,9 +201,12 @@ namespace message
   class t_timeout_message : public t_message {
   public:
     t_timeout_message();
+
+    inline
     t_timeout_message(x_bytebuf buf) : t_message(std::move(buf)) {
     }
 
+    inline
     t_timeout_message& operator=(x_bytebuf buf) {
       t_message::operator=(std::move(buf));
       return *this;
@@ -220,12 +227,15 @@ namespace message
       reason_messenger_noexist = 1
     };
 
+    inline
     t_message_fail(t_n n) : t_message(n) {
     }
 
+    inline
     t_message_fail(x_bytebuf buf) : t_message(std::move(buf)) {
     }
 
+    inline
     t_message_fail& operator=(x_bytebuf buf) {
       t_message::operator=(std::move(buf));
       return *this;
@@ -239,9 +249,12 @@ namespace message
   class t_alive_message : public t_message {
   public:
     t_alive_message();
+
+    inline
     t_alive_message(x_bytebuf buf) : t_message(std::move(buf)) {
     }
 
+    inline
     t_alive_message& operator=(x_bytebuf buf) {
       t_message::operator=(std::move(buf));
       return *this;

@@ -68,6 +68,7 @@ using r_messenger_messages     = dainty::messaging::messenger::r_messages;
 using r_messenger_timer_params = dainty::messaging::messenger::r_timer_params;
 using R_messenger_timer_params = dainty::messaging::messenger::R_timer_params;
 using r_messenger_monitor_list = dainty::messaging::messenger::r_monitor_list;
+using t_message_buf            = dainty::messaging::message::t_bytebuf;
 
 namespace dainty
 {
@@ -199,15 +200,20 @@ namespace message
 ///////////////////////////////////////////////////////////////////////////////
 
   struct t_item_ {
-    message::t_bytebuf buf;
-    t_item_(message::t_bytebuf&& _buf) : buf{std::move(_buf)} {
+    inline
+    t_item_(t_message_buf&& _buf) : buf{std::move(_buf)} {
     }
-    t_item_()                                     = delete;
-    t_item_(const message::t_bytebuf&)            = delete;
-    t_item_& operator=(const message::t_bytebuf&) = delete;
-    t_item_& operator=(message::t_bytebuf&&)      = delete;
+
+    t_messenger_id  id;
+    t_messenger_key key = t_messenger_key{0};
+    t_message_buf   buf;
   };
   using R_item_ = t_prefix<t_item_>::R_;
+
+  inline
+  t_bool operator==(R_item_ lh, R_item_ rh) {
+    return false; // XXX don't compare messages at the moment
+  }
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -695,6 +701,7 @@ namespace message
         t_que_proxy_ que_proxy{err, action_, que_processor_, *this};
         dispatcher_.add_event (err, {que_processor_.get_fd(), RD}, &que_proxy);
 
+        // timer
         dispatcher_.event_loop(err, this);
       }
 
@@ -1200,23 +1207,25 @@ namespace message
       cmd_client_.request(err, cmd);
     }
 
-    t_void post_message(r_err err, R_messenger_key key, r_message message) {
-      //XXX -14
-    }
-
-    t_void post_message(r_err err, R_messenger_id id, R_messenger_key,
-                        r_message) {
-      //XXX -19
+    t_void post_message(r_err err, R_messenger_id id, R_messenger_key key,
+                        r_message message) {
+      t_que_chain chain = que_client_.waitable_acquire(err);
+      if (!err) {
+        t_item_& item = chain.head->ref().any.
+                          emplace<t_item_>(t_any_user{0L}, message.release());
+        item.id  = id;
+        item.key = key;
+        que_client_.insert(err, chain);
+      }
     }
 
     t_void wait_message(r_err err, R_messenger_id id,
                         r_messenger_messages messages) {
+      // index must exit. Can jump to it without protection.
+      // messenger will not be deleted while in use.
+      // then read id to check that its correct.
+      //   what about it its the group.
       //XXX -20
-    }
-
-    t_void check_message(r_err err, R_messenger_id id,
-                         r_messenger_messages messages) {
-      //XXX -21
     }
 
     t_void start_timer(r_err err, R_messenger_id id,
@@ -1407,15 +1416,6 @@ namespace messenger
     }
   }
 
-  t_void t_messenger::check_message(t_err err, r_messages messages) const {
-    ERR_GUARD(err) {
-      if (mr_)
-        mr_->check_message(err, id_, messages);
-      else
-        err = err::E_XXX;
-    }
-  }
-
   t_void t_messenger::start_timer(t_err err, R_timer_params params) {
     ERR_GUARD(err) {
       if (mr_)
@@ -1540,8 +1540,8 @@ namespace messenger
     ERR_GUARD(err) {
       static t_mutex_lock lock(err);
       <% auto scope = lock.make_locked_scope(err);
-        if (scope == VALID) {
-          if (!mr_) {
+        if (!err) {
+          if (mr_ == nullptr) {
             mr_ = new t_messaging_{err, params ? *params : t_params{}};
             if (err)
               delete named::reset(mr_);
@@ -1705,15 +1705,6 @@ namespace messenger
       err = err::E_XXX;
     }
     return false;
-  }
-
-  t_void post_message(t_err err, R_messenger_key key, r_message message) {
-    ERR_GUARD(err) {
-      if (mr_)
-        mr_->post_message(err, key, message);
-      else
-        err = err::E_XXX;
-    }
   }
 
 ///////////////////////////////////////////////////////////////////////////////
