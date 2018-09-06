@@ -53,6 +53,7 @@ namespace message
   using named::t_uchar;
   using named::t_uint16;
   using named::t_explicit;
+  using named::t_prefix;
   using named::string::t_string;
 
   using container::bytebuf::p_byte;
@@ -118,6 +119,8 @@ namespace message
     t_user    user;
     t_version version;
   };
+  using r_message_id = t_prefix<t_message_id>::r_;
+  using R_message_id = t_prefix<t_message_id>::R_;
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -130,7 +133,8 @@ namespace message
   public:
     using t_key     = t_messenger_key;
     using t_version = t_message_version;
-    using t_id      = t_message_id;
+    using r_id      = r_message_id;
+    using R_id      = R_message_id;
     using t_user    = t_message_user;
     using t_domain  = t_message_domain;
 
@@ -144,15 +148,15 @@ namespace message
     t_message& operator=(R_message) = delete;
     t_message& operator=(x_message) = delete;
 
-    t_bool set(const t_id&, t_uint32 length, t_uint16 cnt = 0);
-    t_bool get(t_id&      id,
-               t_uint32&  length,
+    t_bool set(R_id, t_n len, t_uint16 cnt = 0);
+    t_bool get(r_id       id,
+               t_n&       len,
                t_key&     dst,
                t_key&     src,
                t_uint16&  cnt);
 
-    operator t_bool      () const;
-    operator t_validity  () const;
+    operator t_bool    () const;
+    operator t_validity() const;
 
     t_bool  is_empty    () const;
     t_n     get_capacity() const;
@@ -168,10 +172,10 @@ namespace message
     t_bytebuf buf_;
   };
 
-  t_messenger_key  read_dst(R_message);
-  t_messenger_key  read_src(R_message);
-  t_message_id     read_id (R_message);
-  t_n              read_len(R_message);
+  t_messenger_key read_dst(R_message);
+  t_messenger_key read_src(R_message);
+  t_message_id    read_id (R_message);
+  t_n             read_len(R_message);
 
 ///////////////////////////////////////////////////////////////////////////////
 

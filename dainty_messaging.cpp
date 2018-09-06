@@ -91,15 +91,15 @@ namespace message
     return *this;
   }
 
-  t_bool t_message::set(const t_id&, t_uint32 length, t_uint16 cnt) {
+  t_bool t_message::set(R_id, t_n len, t_uint16 cnt) {
     return false;
   }
 
-  t_bool t_message::get(t_id&      id,
-                        t_uint32&  length,
-                        t_key&     dst,
-                        t_key&     src,
-                        t_uint16&  cnt) {
+  t_bool t_message::get(r_id      id,
+                        t_n&      len,
+                        t_key&    dst,
+                        t_key&    src,
+                        t_uint16& cnt) {
     return false;
   }
 
