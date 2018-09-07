@@ -1079,7 +1079,7 @@ namespace message
       : logic_     {err, params},
         cmd_client_{logic_.make_cmd_client()},
         que_client_{logic_.make_que_client()},
-        thread_    {err, P_cstr{"messaging"}, &logic_, false} {
+        thread_    {err, P_cstr{"messaging"}, {&logic_, nullptr}} {
     }
 
     t_void update(r_err err, R_params params) {
