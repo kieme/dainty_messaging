@@ -126,8 +126,8 @@ namespace message
 
   class t_message;
   using r_message = named::t_prefix<t_message>::r_;
-  using R_message = named::t_prefix<t_message>::R_;
   using x_message = named::t_prefix<t_message>::x_;
+  using R_message = named::t_prefix<t_message>::R_;
 
   class t_message {
   public:
@@ -140,13 +140,11 @@ namespace message
 
     t_message();
     t_message(t_n);
-    t_message(x_bytebuf);
-    t_message(R_message) = delete;
-    t_message(x_message) = delete;
+    t_message(x_message);
+    t_message(R_message);
 
-    t_message& operator=(x_bytebuf);
-    t_message& operator=(R_message) = delete;
-    t_message& operator=(x_message) = delete;
+    r_message operator=(x_message);
+    r_message operator=(R_message);
 
     t_bool set(R_id, t_n len, t_uint16 cnt = 0);
     t_bool get(r_id       id,
@@ -165,8 +163,7 @@ namespace message
     P_byte  data() const;
     P_byte cdata() const;
 
-    t_bytebuf release();
-    t_bytebuf clone() const;
+    t_message clone() const;
 
   private:
     t_bytebuf buf_;
@@ -179,17 +176,25 @@ namespace message
 
 ///////////////////////////////////////////////////////////////////////////////
 
+  class t_notify_message;
+  using r_notify_message = named::t_prefix<t_notify_message>::r_;
+  using x_notify_message = named::t_prefix<t_notify_message>::x_;
+
   class t_notify_message : public t_message {
   public:
     t_notify_message();
 
     inline
-    t_notify_message(x_bytebuf buf) : t_message(std::move(buf)) {
+    t_notify_message(x_message msg) : t_message(std::move(msg)) {
     }
 
     inline
-    t_notify_message& operator=(x_bytebuf buf) {
-      t_message::operator=(std::move(buf));
+    t_notify_message(x_notify_message msg) : t_message(std::move(msg)) {
+    }
+
+    inline
+    r_notify_message operator=(x_notify_message msg) {
+      t_message::operator=(std::move(msg));
       return *this;
     }
 
@@ -202,17 +207,25 @@ namespace message
 
 ///////////////////////////////////////////////////////////////////////////////
 
+  class t_timeout_message;
+  using r_timeout_message = named::t_prefix<t_timeout_message>::r_;
+  using x_timeout_message = named::t_prefix<t_timeout_message>::x_;
+
   class t_timeout_message : public t_message {
   public:
     t_timeout_message();
 
     inline
-    t_timeout_message(x_bytebuf buf) : t_message(std::move(buf)) {
+    t_timeout_message(x_message msg) : t_message(std::move(msg)) {
     }
 
     inline
-    t_timeout_message& operator=(x_bytebuf buf) {
-      t_message::operator=(std::move(buf));
+    t_timeout_message(x_timeout_message msg) : t_message(std::move(msg)) {
+    }
+
+    inline
+    r_timeout_message operator=(x_timeout_message msg) {
+      t_message::operator=(std::move(msg));
       return *this;
     }
 
@@ -225,42 +238,58 @@ namespace message
 
 ///////////////////////////////////////////////////////////////////////////////
 
-  class t_message_fail : public t_message {
+  class t_fail_message;
+  using r_fail_message = named::t_prefix<t_fail_message>::r_;
+  using x_fail_message = named::t_prefix<t_fail_message>::x_;
+
+  class t_fail_message : public t_message {
   public:
     enum reason_t {
       reason_messenger_noexist = 1
     };
 
     inline
-    t_message_fail(t_n n) : t_message(n) {
+    t_fail_message(t_n n) : t_message(n) {
     }
 
     inline
-    t_message_fail(x_bytebuf buf) : t_message(std::move(buf)) {
+    t_fail_message(x_message msg) : t_message(std::move(msg)) {
     }
 
     inline
-    t_message_fail& operator=(x_bytebuf buf) {
-      t_message::operator=(std::move(buf));
+    t_fail_message(x_fail_message msg) : t_message(std::move(msg)) {
+    }
+
+    inline
+    r_fail_message operator=(x_fail_message msg) {
+      t_message::operator=(std::move(msg));
       return *this;
     }
 
-    t_bool get(reason_t&, t_message& send_message);
+    t_bool get(reason_t&, r_message send_message);
   };
 
 ///////////////////////////////////////////////////////////////////////////////
+
+  class t_alive_message;
+  using r_alive_message = named::t_prefix<t_alive_message>::r_;
+  using x_alive_message = named::t_prefix<t_alive_message>::x_;
 
   class t_alive_message : public t_message {
   public:
     t_alive_message();
 
     inline
-    t_alive_message(x_bytebuf buf) : t_message(std::move(buf)) {
+    t_alive_message(x_message msg) : t_message(std::move(msg)) {
     }
 
     inline
-    t_alive_message& operator=(x_bytebuf buf) {
-      t_message::operator=(std::move(buf));
+    t_alive_message(x_alive_message msg) : t_message(std::move(msg)) {
+    }
+
+    inline
+    r_alive_message operator=(x_alive_message msg) {
+      t_message::operator=(std::move(msg));
       return *this;
     }
 

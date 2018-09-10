@@ -28,9 +28,10 @@
 #define _DAINTY_MESSAGING_MESSENGER_H_
 
 #include <map>
-#include "dainty_named.h"
 #include "dainty_named_string.h"
+#include "dainty_mt_chained_queue.h"
 #include "dainty_container_list.h"
+#include "dainty_container_maybe.h"
 #include "dainty_messaging_err.h"
 #include "dainty_messaging_message.h"
 
@@ -49,21 +50,24 @@ namespace messenger
   using named::VALID;
   using named::INVALID;
   using named::t_fd;
+  using container::maybe::t_maybe;
   using err::t_err;
   using message::t_message;
-  using message::r_message;
+  using message::x_message;
   using message::t_multiple_of_100ms;
 
-  using t_user     = message::t_messenger_user;
-  using t_key      = message::t_messenger_key;
-  using t_name     = message::t_messenger_name;
-  using t_prio     = message::t_messenger_prio;
-  using R_key      = t_prefix<t_key>::R_;
-  using r_name     = t_prefix<t_name>::r_;
-  using R_name     = t_prefix<t_name>::R_;
-  using p_user     = t_prefix<t_user>::p_;
-  using t_messages = container::list::t_list<t_message>;
-  using r_messages = t_prefix<t_messages>::r_;
+  using t_user       = message::t_messenger_user;
+  using t_key        = message::t_messenger_key;
+  using t_name       = message::t_messenger_name;
+  using t_prio       = message::t_messenger_prio;
+  using R_key        = t_prefix<t_key>::R_;
+  using r_name       = t_prefix<t_name>::r_;
+  using R_name       = t_prefix<t_name>::R_;
+  using p_user       = t_prefix<t_user>::p_;
+  using t_messages   = container::list::t_list<t_message>;
+  using r_messages   = t_prefix<t_messages>::r_;
+  using t_processor_ = mt::chained_queue::t_processor;
+  using x_processor_ = t_prefix<t_processor_>::x_;
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -189,31 +193,12 @@ namespace messenger
 
 ///////////////////////////////////////////////////////////////////////////////
 
-  class t_id {
-  public:
-    t_key key;
-    t_fd  fd;
-
-    inline t_id() : key(0), fd(-1) {
-    }
-
-    inline t_id(R_key _key, t_fd _fd) : key(_key), fd(_fd) {
-    }
-
-    inline operator t_validity() const {
-      return get(key) && get(fd) != -1 ? VALID : INVALID;
-    }
-  };
-  using R_id = t_prefix<t_id>::R_;
-
-///////////////////////////////////////////////////////////////////////////////
-
   class t_messenger;
   using r_messenger = t_prefix<t_messenger>::r_;
   using R_messenger = t_prefix<t_messenger>::R_;
   using x_messenger = t_prefix<t_messenger>::x_;
 
-  class t_messenger {
+  class t_messenger final {
   public:
      t_messenger(x_messenger);
      t_messenger(R_messenger)           = delete;
@@ -231,8 +216,8 @@ namespace messenger
     t_void update_visibility  (t_err, t_visibility);
     t_void update_alive_period(t_err, t_multiple_of_100ms);
 
-    t_void post_message (t_err, R_key, r_message) const;
-    t_void wait_message (t_err, r_messages) const;
+    t_void post_message (t_err, R_key, x_message);
+    t_void wait_message (t_err, r_messages);
 
     t_void start_timer(t_err, R_timer_params);
     t_void stop_timer (t_err);
@@ -250,11 +235,13 @@ namespace messenger
     t_void get_monitored (t_err, r_monitor_list) const;
 
   private:
-    friend t_messenger mk_(R_id);
-    inline t_messenger(R_id id) : id_(id) {
-    }
+    friend t_messenger mk_();
+    friend t_messenger mk_(R_key, t_maybe<t_processor_>&&);
+    t_messenger() = default;
+    t_messenger(R_key, t_maybe<t_processor_>&&);
 
-    t_id id_;
+    t_key                 id_ = t_key{0};
+    t_maybe<t_processor_> processor_;
   };
 
 ///////////////////////////////////////////////////////////////////////////////

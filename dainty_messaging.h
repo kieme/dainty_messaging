@@ -46,7 +46,6 @@ namespace messaging
   using err::t_err;
   using messenger::t_multiple_of_100ms;
   using messenger::t_messenger;
-  using messenger::r_message;
 
   using t_messenger_params        = messenger::t_params;
   using r_messenger_params        = messenger::r_params;
