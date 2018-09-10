@@ -75,20 +75,17 @@ namespace messaging
     t_multiple_of_100ms      alive_factor;
     t_messenger_timer_params timer_params;
 
-    inline
-    t_messenger_create_params()
+    inline t_messenger_create_params()
       : visibility(messenger::VISIBILITY_PROCESS), alive_factor(0) {
     }
 
-    inline
-    t_messenger_create_params(t_messenger_visibility _visibility)
+    inline t_messenger_create_params(t_messenger_visibility _visibility)
       : visibility(_visibility), alive_factor(0) {
     }
 
-    inline
-    t_messenger_create_params(t_messenger_visibility   _visibility,
-                              t_multiple_of_100ms      _alive_factor,
-                              R_messenger_timer_params _timer_params)
+    inline t_messenger_create_params(t_messenger_visibility   _visibility,
+                                     t_multiple_of_100ms      _alive_factor,
+                                     R_messenger_timer_params _timer_params)
       : visibility(_visibility), alive_factor(_alive_factor),
         timer_params(_timer_params) {
     }
@@ -129,16 +126,13 @@ namespace messaging
     t_name       name;
     t_n          queuesize = t_n{4000};
 
-    inline
-    t_params() : visibility{VISIBILITY_OFF} {
+    inline t_params() : visibility{VISIBILITY_OFF} {
     }
 
-    inline
-    t_params(t_visibility _visibility) : visibility{_visibility} {
+    inline t_params(t_visibility _visibility) : visibility{_visibility} {
     }
 
-    inline
-    t_params(t_visibility _visibility, R_name _name, t_n _queuesize)
+    inline t_params(t_visibility _visibility, R_name _name, t_n _queuesize)
       : visibility{_visibility}, name{_name}, queuesize{_queuesize} {
     }
   };
@@ -164,8 +158,7 @@ namespace messaging
     t_messenger_params params;
     t_messenger_stats  stats;
 
-    inline
-    t_messenger_info() : key{0} {
+    inline t_messenger_info() : key{0} {
     }
   };
   using r_messenger_info = t_prefix<t_messenger_info>::r_;

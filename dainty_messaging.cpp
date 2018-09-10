@@ -33,6 +33,7 @@
 #include "dainty_mt_thread.h"
 #include "dainty_messaging_message.h"
 #include "dainty_messaging_messenger.h"
+#include "dainty_tracing.h"
 #include "dainty_messaging.h"
 
 using namespace dainty::container;
@@ -53,6 +54,8 @@ using dainty::mt::event_dispatcher::CONTINUE;
 using dainty::mt::event_dispatcher::QUIT_EVENT_LOOP;
 using dainty::mt::event_dispatcher::RD;
 using dainty::messaging::messenger::t_multiple_of_100ms;
+using dainty::messaging::message::t_messenger_key_;
+using dainty::tracing::make_tracer;
 
 using t_thd_err                = t_thread::t_logic::t_err;
 using t_cmd_err                = command::t_processor::t_logic::t_err;
@@ -74,6 +77,91 @@ namespace dainty
 {
 namespace messaging
 {
+////////////////////////////////////////////////////////////////////////////////
+
+  tracing::t_tracer& tr_() {
+    static tracing::t_err err;
+    static tracing::t_tracer tr = make_tracer(err, P_cstr{"messaging"});
+    if (tr == INVALID)
+      tr = make_tracer(err, P_cstr{"messaging"});
+    if (err) {
+      err.clear(); // XXX
+    }
+    return tr;
+  }
+
+////////////////////////////////////////////////////////////////////////////////
+
+  inline t_bool operator==(R_messenger_key lh, R_messenger_key rh) {
+    return get(lh) == get(rh);
+  }
+
+  inline t_bool operator!=(R_messenger_key lh, R_messenger_key rh) {
+    return get(lh) != get(rh);
+  }
+
+  inline t_bool operator<(R_messenger_key lh, R_messenger_key rh) {
+    return get(lh) < get(rh);
+  }
+
+////////////////////////////////////////////////////////////////////////////////
+
+  inline t_bool operator<(t_messenger_prio lh, t_messenger_prio rh) {
+    return get(lh) < get(rh);
+  }
+
+////////////////////////////////////////////////////////////////////////////////
+
+  struct t_messenger_key_params {
+    t_bool   group = false;
+    t_bool   local = false;
+    t_uint16 id    = 0;
+    t_uint16 seq   = 0;
+
+    inline t_messenger_key_params() = default;
+    inline t_messenger_key_params(t_bool _group, t_bool _local, t_uint16 _id,
+                                  t_uint16 _seq)
+      : group(_group), local(_local), id(_id), seq(_seq) {
+    }
+  };
+
+  inline t_messenger_key make_key(t_uint16 seq, t_uint16 id) {
+    return t_messenger_key(((t_messenger_key_)id  << 1) |
+                           ((t_messenger_key_)seq << 16));
+  }
+
+  inline t_messenger_key make_group_key(t_uint16 seq, t_uint16 id) {
+    return t_messenger_key(get(make_key(seq, id)) | 1);
+  }
+
+  inline t_messenger_key make_remote_key(t_uint16 remote_seq,
+                                         t_uint16 remote_id,
+                                         R_messenger_key key) {
+    return t_messenger_key(((t_messenger_key_)remote_id  << 32) |
+                           ((t_messenger_key_)remote_seq << 48) | get(key));
+  }
+
+  inline t_bool is_remote(R_messenger_key key) {
+    return get(key) >> 32;
+  }
+
+  inline t_bool is_local(R_messenger_key key) {
+    return !is_remote(key);
+  }
+
+  inline t_bool is_group(R_messenger_key key) {
+    return get(key) & 1;
+  }
+
+  t_messenger_key_params get_key_params(R_messenger_key key) {
+    return  {is_group(key), is_local(key)
+             0xff & (get(key) >> 48),
+             0xff & (get(key) >> 32);
+    return seq;
+  }
+
+///////////////////////////////////////////////////////////////////////////////
+
 namespace message
 {
 ///////////////////////////////////////////////////////////////////////////////

@@ -118,8 +118,7 @@ namespace messenger
     t_prio     prio;
     t_user     user;
 
-    inline
-    t_group() : prio(0), user(0L) {
+    inline t_group() : prio(0), user(0L) {
     }
 
     inline
@@ -143,12 +142,10 @@ namespace messenger
     t_user user;
     t_key  key;
 
-    inline
-    t_monitor() : prio{0}, user{0L}, key{0} {
+    inline t_monitor() : prio{0}, user{0L}, key{0} {
     }
 
-    inline
-    t_monitor(R_name _name, t_prio _prio, t_user _user, t_key _key)
+    inline t_monitor(R_name _name, t_prio _prio, t_user _user, t_key _key)
       : name{_name}, prio{_prio}, user{_user}, key{_key} {
     }
   };
@@ -169,20 +166,18 @@ namespace messenger
     t_group_list        group_list;
     t_monitor_list      monitor_list;
 
-    inline
-    t_params(t_visibility        _visibility   = VISIBILITY_PROCESS,
-             t_multiple_of_100ms _alive_factor = t_multiple_of_100ms(0),
-             R_timer_params      _timer_params = t_timer_params())
+    inline t_params(t_visibility        _visibility   = VISIBILITY_PROCESS,
+                    t_multiple_of_100ms _alive_factor = t_multiple_of_100ms(0),
+                    R_timer_params      _timer_params = t_timer_params())
       : visibility(_visibility), alive_factor(_alive_factor),
         timer_params(_timer_params) {
     }
 
-    inline
-    t_params(t_visibility        _visibility,
-             t_multiple_of_100ms _alive_factor,
-             R_timer_params      _timer_params,
-             R_group_list        _group_list,
-             R_monitor_list      _monitor_list)
+    inline t_params(t_visibility        _visibility,
+                    t_multiple_of_100ms _alive_factor,
+                    R_timer_params      _timer_params,
+                    R_group_list        _group_list,
+                    R_monitor_list      _monitor_list)
       : visibility(_visibility), alive_factor(_alive_factor),
         timer_params(_timer_params), group_list(_group_list),
         monitor_list(_monitor_list) {

@@ -47,10 +47,6 @@ namespace message
   using named::VALID;
   using named::INVALID;
 
-  using named::t_uint64;
-  using named::t_uint32;
-  using named::t_int32;
-  using named::t_uchar;
   using named::t_uint16;
   using named::t_explicit;
   using named::t_prefix;
@@ -78,28 +74,36 @@ namespace message
 
 ///////////////////////////////////////////////////////////////////////////////
 
-  enum  t_messenger_user_tag_ { };
-  using t_messenger_user  = named::t_user<t_messenger_user_tag_>;
+  enum  t_messenger_user_tag_ {};
+  using t_messenger_user = named::t_user<t_messenger_user_tag_>;
 
-  enum  t_messenger_key_tag_ { };
-  using t_messenger_key   = t_explicit<t_uint64, t_messenger_key_tag_>;
+  enum  t_messenger_key_tag_ {};
+  using t_messenger_key_ = named::t_uint64;
+  using t_messenger_key  = t_explicit<t_messenger_key_, t_messenger_key_tag_>;
 
-  enum  t_messenger_name_tag_ { };
-  using t_messenger_name  = t_string<t_messenger_name_tag_, 32>;
+  enum  t_messenger_name_tag_ {};
+  using t_messenger_name = t_string<t_messenger_name_tag_, 32>;
 
-  enum  t_messenger_prio_tag_ { };
-  using t_messenger_prio  = t_explicit<t_uint16, t_messenger_prio_tag_>;
+  enum  t_messenger_prio_tag_ {};
+  using t_messenger_prio_ = named::t_uint16;
+  using t_messenger_prio  = t_explicit<t_messenger_prio_,
+                                       t_messenger_prio_tag_>;
 
-  enum  t_message_domain_tag_ { };
-  using t_message_domain  = t_explicit<t_uchar, t_message_domain_tag_>;
+  enum  t_message_domain_tag_ {};
+  using t_message_domain_ = named::t_uchar;
+  using t_message_domain  = t_explicit<t_message_domain_,
+                                       t_message_domain_tag_>;
 
-  enum  t_message_user_tag_ { };
-  using t_message_user    = t_explicit<t_uchar, t_message_user_tag_>;
+  enum  t_message_user_tag_ {};
+  using t_message_user_ = named::t_char;
+  using t_message_user  = t_explicit<t_message_user_, t_message_user_tag_>;
 
-  enum  t_message_version_tag_ { };
-  using t_message_version = t_explicit<t_uchar, t_message_version_tag_>;
+  enum  t_message_version_tag_ {};
+  using t_message_version_ = named::t_uchar;
+  using t_message_version  = t_explicit<t_message_version_,
+                                        t_message_version_tag_>;
 
-  enum  t_multiple_of_100ms_tag_ { };
+  enum  t_multiple_of_100ms_tag_ {};
   using t_multiple_of_100ms = named::t_multiple<100, t_multiple_of_100ms_tag_>;
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -110,8 +114,7 @@ namespace message
     using t_user    = t_message_user;
     using t_version = t_message_version;
 
-    inline
-    t_message_id(t_domain _domain, t_user _user, t_version _version)
+    inline t_message_id(t_domain _domain, t_user _user, t_version _version)
       : domain(_domain), user(_user), version(_version) {
     }
 
@@ -184,16 +187,13 @@ namespace message
   public:
     t_notify_message();
 
-    inline
-    t_notify_message(x_message msg) : t_message(std::move(msg)) {
+    inline t_notify_message(x_message msg) : t_message(std::move(msg)) {
     }
 
-    inline
-    t_notify_message(x_notify_message msg) : t_message(std::move(msg)) {
+    inline t_notify_message(x_notify_message msg) : t_message(std::move(msg)) {
     }
 
-    inline
-    r_notify_message operator=(x_notify_message msg) {
+    inline r_notify_message operator=(x_notify_message msg) {
       t_message::operator=(std::move(msg));
       return *this;
     }
@@ -215,16 +215,14 @@ namespace message
   public:
     t_timeout_message();
 
-    inline
-    t_timeout_message(x_message msg) : t_message(std::move(msg)) {
+    inline t_timeout_message(x_message msg) : t_message(std::move(msg)) {
     }
 
     inline
     t_timeout_message(x_timeout_message msg) : t_message(std::move(msg)) {
     }
 
-    inline
-    r_timeout_message operator=(x_timeout_message msg) {
+    inline r_timeout_message operator=(x_timeout_message msg) {
       t_message::operator=(std::move(msg));
       return *this;
     }
@@ -248,20 +246,16 @@ namespace message
       reason_messenger_noexist = 1
     };
 
-    inline
-    t_fail_message(t_n n) : t_message(n) {
+    inline t_fail_message(t_n n) : t_message(n) {
     }
 
-    inline
-    t_fail_message(x_message msg) : t_message(std::move(msg)) {
+    inline t_fail_message(x_message msg) : t_message(std::move(msg)) {
     }
 
-    inline
-    t_fail_message(x_fail_message msg) : t_message(std::move(msg)) {
+    inline t_fail_message(x_fail_message msg) : t_message(std::move(msg)) {
     }
 
-    inline
-    r_fail_message operator=(x_fail_message msg) {
+    inline r_fail_message operator=(x_fail_message msg) {
       t_message::operator=(std::move(msg));
       return *this;
     }
@@ -279,16 +273,13 @@ namespace message
   public:
     t_alive_message();
 
-    inline
-    t_alive_message(x_message msg) : t_message(std::move(msg)) {
+    inline t_alive_message(x_message msg) : t_message(std::move(msg)) {
     }
 
-    inline
-    t_alive_message(x_alive_message msg) : t_message(std::move(msg)) {
+    inline t_alive_message(x_alive_message msg) : t_message(std::move(msg)) {
     }
 
-    inline
-    r_alive_message operator=(x_alive_message msg) {
+    inline r_alive_message operator=(x_alive_message msg) {
       t_message::operator=(std::move(msg));
       return *this;
     }
