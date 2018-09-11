@@ -59,7 +59,7 @@ namespace message
   using t_bytebuf = container::bytebuf::t_bytebuf<t_bytebuf_tag_, 0>;
   using x_bytebuf = named::t_prefix<t_bytebuf>::x_;
 
-  enum t_message_type {
+  enum t_type {
     MSG_NOTIFY,
     MSG_TIMEOUT,
     MSG_ALIVE,
@@ -89,32 +89,26 @@ namespace message
   using t_messenger_prio  = t_explicit<t_messenger_prio_,
                                        t_messenger_prio_tag_>;
 
-  enum  t_message_domain_tag_ {};
-  using t_message_domain_ = named::t_uchar;
-  using t_message_domain  = t_explicit<t_message_domain_,
-                                       t_message_domain_tag_>;
+  enum  t_domain_tag_ {};
+  using t_domain_ = named::t_uchar;
+  using t_domain  = t_explicit<t_domain_, t_domain_tag_>;
 
-  enum  t_message_user_tag_ {};
-  using t_message_user_ = named::t_char;
-  using t_message_user  = t_explicit<t_message_user_, t_message_user_tag_>;
+  enum  t_user_tag_ {};
+  using t_user_ = named::t_char;
+  using t_user  = t_explicit<t_user_, t_user_tag_>;
 
-  enum  t_message_version_tag_ {};
-  using t_message_version_ = named::t_uchar;
-  using t_message_version  = t_explicit<t_message_version_,
-                                        t_message_version_tag_>;
+  enum  t_version_tag_ {};
+  using t_version_ = named::t_uchar;
+  using t_version  = t_explicit<t_version_, t_version_tag_>;
 
   enum  t_multiple_of_100ms_tag_ {};
   using t_multiple_of_100ms = named::t_multiple<100, t_multiple_of_100ms_tag_>;
 
 ///////////////////////////////////////////////////////////////////////////////
 
-  class t_message_id {
+  class t_id {
   public:
-    using t_domain  = t_message_domain;
-    using t_user    = t_message_user;
-    using t_version = t_message_version;
-
-    inline t_message_id(t_domain _domain, t_user _user, t_version _version)
+    inline t_id(t_domain _domain, t_user _user, t_version _version)
       : domain(_domain), user(_user), version(_version) {
     }
 
@@ -122,8 +116,8 @@ namespace message
     t_user    user;
     t_version version;
   };
-  using r_message_id = t_prefix<t_message_id>::r_;
-  using R_message_id = t_prefix<t_message_id>::R_;
+  using r_id = t_prefix<t_id>::r_;
+  using R_id = t_prefix<t_id>::R_;
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -134,12 +128,7 @@ namespace message
 
   class t_message {
   public:
-    using t_key     = t_messenger_key;
-    using t_version = t_message_version;
-    using r_id      = r_message_id;
-    using R_id      = R_message_id;
-    using t_user    = t_message_user;
-    using t_domain  = t_message_domain;
+    using t_key = t_messenger_key;
 
     t_message();
     t_message(t_n);
@@ -174,7 +163,7 @@ namespace message
 
   t_messenger_key read_dst(R_message);
   t_messenger_key read_src(R_message);
-  t_message_id    read_id (R_message);
+  t_id            read_id (R_message);
   t_n             read_len(R_message);
 
 ///////////////////////////////////////////////////////////////////////////////

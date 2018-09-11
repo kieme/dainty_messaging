@@ -69,6 +69,7 @@ using t_que_processor          = waitable_chained_queue::t_processor;
 using r_messenger_messages     = dainty::messaging::messenger::r_messages;
 using r_messenger_timer_params = dainty::messaging::messenger::r_timer_params;
 using R_messenger_timer_params = dainty::messaging::messenger::R_timer_params;
+using t_messenger_processor    = dainty::messaging::messenger::t_processor_;
 using r_messenger_monitor_list = dainty::messaging::messenger::r_monitor_list;
 using t_message                = dainty::messaging::message::t_message;
 using x_message                = dainty::messaging::message::x_message;
@@ -84,9 +85,8 @@ namespace messaging
     static tracing::t_tracer tr = make_tracer(err, P_cstr{"messaging"});
     if (tr == INVALID)
       tr = make_tracer(err, P_cstr{"messaging"});
-    if (err) {
+    if (err)
       err.clear(); // XXX
-    }
     return tr;
   }
 
@@ -153,17 +153,159 @@ namespace messaging
     return get(key) & 1;
   }
 
-  t_messenger_key_params get_key_params(R_messenger_key key) {
-    return  {is_group(key), is_local(key)
-             0xff & (get(key) >> 48),
-             0xff & (get(key) >> 32);
-    return seq;
+  inline t_messenger_key_params get_key_params(R_messenger_key key) {
+    return t_messenger_key_params(is_group(key), is_local(key),
+                                  (t_uint16)(0xff & (get(key) >> 48)),
+                                  (t_uint16)(0xff & (get(key) >> 32)));
   }
 
 ///////////////////////////////////////////////////////////////////////////////
 
 namespace message
 {
+///////////////////////////////////////////////////////////////////////////////
+
+  struct t_header_data_ {
+    t_n_             len;
+    t_messenger_key_ dst;
+    t_messenger_key_ src;
+    t_uchar          domain;
+    t_uchar          user;
+    t_uchar          version;
+    t_uint16         cnt;
+    t_uint16         seq;
+  };
+  using p_header_data_ = t_prefix<t_header_data_>::p_;
+  using P_header_data_ = t_prefix<t_header_data_>::P_;
+
+  t_bool write_header(r_message       msg,
+                      R_id            id,
+                      t_n             _len,
+                      R_messenger_key _dst,
+                      R_messenger_key _src,
+                      t_uint16        _cnt,
+                      t_uint16        _seq) {
+    if (get(msg.get_capacity()) >= sizeof(t_header_data_)) {
+      p_header_data_ hdr = (p_header_data_)msg.data();
+      hdr->len     = get(_len);
+      hdr->dst     = get(_dst);
+      hdr->src     = get(_src);
+      hdr->domain  = get(id.domain);
+      hdr->user    = get(id.user);
+      hdr->version = get(id.version);
+      hdr->cnt     = _cnt;
+      hdr->seq     = _seq;
+      return true;
+    }
+    return false;
+  }
+
+  t_bool write_header(r_message msg,
+                      R_id      id,
+                      t_n       _len,
+                      t_uint16  _cnt) {
+    if (get(msg.get_capacity()) >= sizeof(t_header_data_)) {
+      p_header_data_ hdr = (p_header_data_)msg.data();
+      hdr->len     = get(_len);
+      hdr->domain  = get(id.domain);
+      hdr->user    = get(id.user);
+      hdr->version = get(id.version);
+      hdr->cnt     = _cnt;
+      return true;
+    }
+    return false;
+  }
+
+  t_bool write_header(r_message       msg,
+                      R_id            id,
+                      R_messenger_key _dst,
+                      R_messenger_key _src,
+                      t_uint16        _seq) {
+    if (get(msg.get_capacity()) >= sizeof(t_header_data_)) {
+      p_header_data_ hdr = (p_header_data_)msg.data();
+      hdr->dst     = get(_dst);
+      hdr->src     = get(_src);
+      hdr->domain  = get(id.domain);
+      hdr->user    = get(id.user);
+      hdr->version = get(id.version);
+      hdr->seq     = _seq;
+      return true;
+    }
+    return false;
+  }
+
+  t_bool write_header(r_message       msg,
+                      R_messenger_key _dst,
+                      R_messenger_key _src) {
+    if (get(msg.get_capacity()) >= sizeof(t_header_data_)) {
+      p_header_data_ hdr = (p_header_data_)msg.data();
+      hdr->dst = get(_dst);
+      hdr->src = get(_src);
+      return true;
+    }
+    return false;
+  }
+
+  t_bool read_header(R_message       msg,
+                     r_id            id,
+                     t_n&            _len,
+                     r_messenger_key _dst,
+                     r_messenger_key _src,
+                     t_uint16&       _cnt,
+                     t_uint16&       _seq) {
+    if (get(msg.get_capacity()) >= sizeof(t_header_data_)) {
+      P_header_data_ hdr = (P_header_data_)msg.const_data();
+      set(_len)       = hdr->len;
+      set(_dst)       = hdr->dst;
+      set(_src)       = hdr->src;
+      set(id.domain)  = hdr->domain;
+      set(id.user)    = hdr->user;
+      set(id.version) = hdr->version;
+      cnt_            = hdr->cnt;
+      seq_            = hdr->seq;
+      return true;
+    }
+    return false;
+  }
+
+  inline
+  t_messenger_key read_dst(R_message msg) {
+    if (msg == VALID && get(msg.get_capacity()) >= sizeof(t_header_data_)) {
+      P_header_data_ hdr = (P_header_data_)msg.const_data(); //XXX - hack
+      return t_messenger_key{hdr->dst};
+    }
+    return t_messenger_key{0};
+  }
+
+  inline
+  t_messenger_key read_src(R_message msg) {
+    if (msg == VALID && get(msg.get_capacity()) >= sizeof(t_header_data_)) {
+      P_header_data_ hdr = (P_header_data_)msg.const_data(); //XXX - hack
+      return t_messenger_key{hdr->src};
+    }
+    return t_messenger_key{0};
+  }
+
+  inline
+  t_n read_len(R_message msg) {
+    if (msg == VALID && get(msg.get_capacity()) >= sizeof(t_header_data_)) {
+      P_header_data_ hdr = (P_header_data_)msg.const_data(); //XXX - hack
+      return t_n{hdr->len};
+    }
+    return t_n{0};
+  }
+
+  inline
+  t_id read_id(R_message msg) {
+    if (msg == VALID && get(msg.get_capacity()) >= (sizeof(t_header_data_))) {
+      P_header_data_ hdr = (P_header_data_)msg.const_data(); //XXX - hack
+      return t_id{t_domain {data->domain},
+                  t_user   {data->user},
+                  t_version{data->version}};
+    }
+    return t_id{t_domain{0}, t_user{0}, t_version{0}};
+  }
+
 ///////////////////////////////////////////////////////////////////////////////
 
   t_message::t_message() : buf_{t_n{10}} {
@@ -299,9 +441,7 @@ namespace message
   };
   using R_item_ = t_prefix<t_item_>::R_;
 
-  inline t_bool operator==(R_item_ lh, R_item_ rh) {
-    return false; // XXX don't compare messages at the moment
-  }
+  inline t_bool operator==(R_item_ lh, R_item_ rh) { return false; }
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -327,10 +467,10 @@ namespace message
 
   struct t_make_messenger_cmd_ : t_cmd {
     constexpr static command::t_id cmd_id = 3;
-    R_messenger_name                 name;
-    R_messenger_create_params        params;
-    t_messenger_key                  id = t_messenger_key{0};
-    t_maybe<messenger::t_processor_> processor; // XXX
+    R_messenger_name               name;
+    R_messenger_create_params      params;
+    t_messenger_key                id = t_messenger_key{0};
+    t_maybe<t_messenger_processor> processor;
 
     inline
     t_make_messenger_cmd_(R_messenger_name          _name,
