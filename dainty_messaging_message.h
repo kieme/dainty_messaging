@@ -80,6 +80,8 @@ namespace message
   enum  t_messenger_key_tag_ {};
   using t_messenger_key_ = named::t_uint64;
   using t_messenger_key  = t_explicit<t_messenger_key_, t_messenger_key_tag_>;
+  using r_messenger_key  = t_prefix<t_messenger_key>::r_;
+  using R_messenger_key  = t_prefix<t_messenger_key>::R_;
 
   enum  t_messenger_name_tag_ {};
   using t_messenger_name = t_string<t_messenger_name_tag_, 32>;
@@ -94,7 +96,7 @@ namespace message
   using t_domain  = t_explicit<t_domain_, t_domain_tag_>;
 
   enum  t_user_tag_ {};
-  using t_user_ = named::t_char;
+  using t_user_ = named::t_uchar;
   using t_user  = t_explicit<t_user_, t_user_tag_>;
 
   enum  t_version_tag_ {};
@@ -129,6 +131,7 @@ namespace message
   class t_message {
   public:
     using t_key = t_messenger_key;
+    using r_key = r_messenger_key;
 
     t_message();
     t_message(t_n);
@@ -141,8 +144,8 @@ namespace message
     t_bool set(R_id, t_n len, t_uint16 cnt = 0);
     t_bool get(r_id       id,
                t_n&       len,
-               t_key&     dst,
-               t_key&     src,
+               r_key      dst,
+               r_key      src,
                t_uint16&  cnt);
 
     operator t_bool    () const;
@@ -189,7 +192,7 @@ namespace message
 
     t_bool get(t_messenger_state&,
                t_messenger_name&,
-               t_messenger_key&,
+               r_messenger_key,
                t_messenger_prio&,
                t_messenger_user&);
   };
@@ -218,7 +221,7 @@ namespace message
 
     t_bool get(t_bool& periodic,
                t_multiple_of_100ms&,
-               t_messenger_key&,
+               r_messenger_key,
                t_messenger_prio&,
                t_messenger_user&);
   };

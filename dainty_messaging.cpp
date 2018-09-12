@@ -73,6 +73,8 @@ using t_messenger_processor    = dainty::messaging::messenger::t_processor_;
 using r_messenger_monitor_list = dainty::messaging::messenger::r_monitor_list;
 using t_message                = dainty::messaging::message::t_message;
 using x_message                = dainty::messaging::message::x_message;
+using R_messenger_key          = t_prefix<t_messenger_key_>::R_;
+using r_messenger_key          = t_prefix<t_messenger_key_>::R_;
 
 namespace dainty
 {
@@ -170,8 +172,8 @@ namespace message
     t_messenger_key_ dst;
     t_messenger_key_ src;
     t_uchar          domain;
-    t_uchar          user;
-    t_uchar          version;
+    t_user_          user;
+    t_version_       version;
     t_uint16         cnt;
     t_uint16         seq;
   };
@@ -254,15 +256,15 @@ namespace message
                      t_uint16&       _cnt,
                      t_uint16&       _seq) {
     if (get(msg.get_capacity()) >= sizeof(t_header_data_)) {
-      P_header_data_ hdr = (P_header_data_)msg.const_data();
+      P_header_data_ hdr = (P_header_data_)msg.cdata();
       set(_len)       = hdr->len;
       set(_dst)       = hdr->dst;
       set(_src)       = hdr->src;
       set(id.domain)  = hdr->domain;
       set(id.user)    = hdr->user;
       set(id.version) = hdr->version;
-      cnt_            = hdr->cnt;
-      seq_            = hdr->seq;
+      _cnt            = hdr->cnt;
+      _seq            = hdr->seq;
       return true;
     }
     return false;
@@ -271,7 +273,7 @@ namespace message
   inline
   t_messenger_key read_dst(R_message msg) {
     if (msg == VALID && get(msg.get_capacity()) >= sizeof(t_header_data_)) {
-      P_header_data_ hdr = (P_header_data_)msg.const_data(); //XXX - hack
+      P_header_data_ hdr = (P_header_data_)msg.cdata(); //XXX - hack
       return t_messenger_key{hdr->dst};
     }
     return t_messenger_key{0};
@@ -280,7 +282,7 @@ namespace message
   inline
   t_messenger_key read_src(R_message msg) {
     if (msg == VALID && get(msg.get_capacity()) >= sizeof(t_header_data_)) {
-      P_header_data_ hdr = (P_header_data_)msg.const_data(); //XXX - hack
+      P_header_data_ hdr = (P_header_data_)msg.cdata(); //XXX - hack
       return t_messenger_key{hdr->src};
     }
     return t_messenger_key{0};
@@ -289,7 +291,7 @@ namespace message
   inline
   t_n read_len(R_message msg) {
     if (msg == VALID && get(msg.get_capacity()) >= sizeof(t_header_data_)) {
-      P_header_data_ hdr = (P_header_data_)msg.const_data(); //XXX - hack
+      P_header_data_ hdr = (P_header_data_)msg.cdata(); //XXX - hack
       return t_n{hdr->len};
     }
     return t_n{0};
@@ -298,10 +300,10 @@ namespace message
   inline
   t_id read_id(R_message msg) {
     if (msg == VALID && get(msg.get_capacity()) >= (sizeof(t_header_data_))) {
-      P_header_data_ hdr = (P_header_data_)msg.const_data(); //XXX - hack
-      return t_id{t_domain {data->domain},
-                  t_user   {data->user},
-                  t_version{data->version}};
+      P_header_data_ hdr = (P_header_data_)msg.cdata(); //XXX - hack
+      return t_id{t_domain {hdr->domain},
+                  t_user   {hdr->user},
+                  t_version{hdr->version}};
     }
     return t_id{t_domain{0}, t_user{0}, t_version{0}};
   }
@@ -372,22 +374,6 @@ namespace message
 
   t_message t_message::clone() const {
     return {};
-  }
-
-  t_messenger_key read_dst(R_message) {
-    return t_messenger_key{0};
-  }
-
-  t_messenger_key read_src(R_message) {
-    return t_messenger_key{0};
-  }
-
-  t_message_id read_id (R_message) {
-    return {t_message_domain{0}, t_message_user{0L}, t_message_version{1}};
-  }
-
-  t_n read_len(R_message) {
-     return t_n{0};
   }
 
 ///////////////////////////////////////////////////////////////////////////////
