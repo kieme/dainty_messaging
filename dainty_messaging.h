@@ -38,6 +38,7 @@ namespace messaging
   using named::t_void;
   using named::t_n_;
   using named::t_n;
+  using named::P_cstr;
   using named::t_validity;
   using named::string::t_string;
   using named::t_prefix;
@@ -47,25 +48,25 @@ namespace messaging
   using messenger::t_multiple_of_100ms;
   using messenger::t_messenger;
 
-  using t_messenger_params        = messenger::t_params;
-  using r_messenger_params        = messenger::r_params;
-  using t_messenger_visibility    = messenger::t_visibility;
-  using t_messenger_prio          = messenger::t_prio;
-  using t_messenger_key           = messenger::t_key;
-  using R_messenger_key           = messenger::R_key;
-  using t_messenger_user          = messenger::t_user;
-  using t_messenger_name          = messenger::t_name;
-  using r_messenger_name          = messenger::r_name;
-  using R_messenger_name          = messenger::R_name;
-  using R_messenger_password      = messenger::R_password;
-  using r_messenger_monitor_list  = messenger::r_monitor_list;
-  using p_messenger_monitor_list  = messenger::p_monitor_list;
-  using p_messenger_group_list    = messenger::p_group_list;
-  using r_messenger_group_list    = messenger::r_group_list;
-  using t_messenger_timer_params  = messenger::t_timer_params;
-  using R_messenger_timer_params  = messenger::R_timer_params;
-  using r_messenger_visibility    = t_prefix<t_messenger_visibility>::r_;
-  using p_messenger_user          = t_prefix<t_messenger_user>::p_;
+  using t_messenger_params       = messenger::t_params;
+  using r_messenger_params       = messenger::r_params;
+  using t_messenger_visibility   = messenger::t_visibility;
+  using t_messenger_prio         = messenger::t_prio;
+  using t_messenger_key          = messenger::t_key;
+  using R_messenger_key          = messenger::R_key;
+  using t_messenger_user         = messenger::t_user;
+  using t_messenger_name         = messenger::t_name;
+  using r_messenger_name         = messenger::r_name;
+  using R_messenger_name         = messenger::R_name;
+  using R_messenger_password     = messenger::R_password;
+  using r_messenger_monitor_list = messenger::r_monitor_list;
+  using p_messenger_monitor_list = messenger::p_monitor_list;
+  using p_messenger_group_list   = messenger::p_group_list;
+  using r_messenger_group_list   = messenger::r_group_list;
+  using t_messenger_timer_params = messenger::t_timer_params;
+  using R_messenger_timer_params = messenger::R_timer_params;
+  using r_messenger_visibility   = t_prefix<t_messenger_visibility>::r_;
+  using p_messenger_user         = t_prefix<t_messenger_user>::p_;
 
 ///////////////////////////////////////////////////////////////////////////////
 

@@ -89,6 +89,7 @@ namespace messaging
 
 ////////////////////////////////////////////////////////////////////////////////
 
+  /*
   tracing::t_tracer& tr_() {
     static tracing::t_err err;
     static tracing::t_tracer tr = make_tracer(err, P_cstr{"messaging"});
@@ -98,6 +99,7 @@ namespace messaging
       err.clear(); // XXX
     return tr;
   }
+  */
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -1155,10 +1157,11 @@ namespace message
     t_data_(R_params _params) : params(_params) {
     }
 
+  private:
     t_msgr_ctxts_       msgr_ctxts_;
     t_grp_ctxts_        grp_ctxts_;
-    t_monitored_lookup_ monitored_;
     t_lookup_           lookup_;
+    t_monitored_lookup_ monitored_;
     t_tmr_lookup_       timers_;
   };
 
@@ -1185,15 +1188,15 @@ namespace message
     }
 
     virtual t_void update(t_thd_err err, r_pthread_attr) noexcept override {
-      printf("thread update - before thread is created\n");
+      printf("messaging: update\n");
     }
 
     virtual t_void prepare(t_thd_err err) noexcept override {
-      printf("thread prepare - after thread is created\n");
+      printf("messaging: prepare\n");
     }
 
     virtual p_void run() noexcept override {
-      printf("thread run - its main loop\n");
+      printf("messaging: run\n");
 
       err::t_err err;
       {
@@ -1216,21 +1219,20 @@ namespace message
     }
 
     virtual t_void may_reorder_events (r_event_infos infos) override {
-      //printf("events received = %lu\n", infos.size());
+      printf("messaging: may_reorder_events\n");
     }
 
     virtual t_void notify_event_remove(r_event_info) override {
-      printf("remove event which should never happen!!\n");
-      // not required
+      printf("messaging: notify_event_remove\n");
     }
 
     virtual t_quit notify_timeout(t_usec) override {
-      printf("timeout that should never happen!!\n");
+      printf("messaging: notify_timeout\n");
       return true; // not required
     }
 
     virtual t_quit notify_error(t_errn)  override {
-      printf("error in event handling!!\n");
+      printf("messaging: notify_error\n");
       return true; // die
     }
 
@@ -1238,174 +1240,174 @@ namespace message
       auto& item = entry.any.ref<t_item_>();
     }
 
-    t_void process_chain(t_chain& chain) {
+    t_void process_chain(t_chain& chain) { //XXX
       for (auto item = chain.head; item; item = item->next())
         process_item(item->ref());
     }
 
     virtual t_void async_process(t_chain chain) noexcept override {
-      printf("recv a trace\n");
+      printf("messaging: recv\n");
       process_chain(chain);
     }
 
     virtual t_void async_process(t_user, p_command cmd) noexcept override {
-      printf("thread async command - none is used at this point\n");
+      printf("messaging: p_command\n");
       // not used
     }
 
     t_void process(err::t_err err, r_update_params_cmd_ cmd) noexcept {
-      printf("thread process: r_update_params_cmd_\n");
+      printf("messaging: r_update_params_cmd_\n");
       //XXX-1
     }
 
     t_void process(err::t_err err, r_fetch_params_cmd_ cmd) noexcept {
-      printf("thread process: r_fetch_params_cmd_\n");
+      printf("messaging: r_fetch_params_cmd_\n");
       //XXX-2
     }
 
     t_void process(err::t_err err, r_make_messenger_cmd_ cmd) noexcept {
-      printf("thread process: r_make_messenger_cmd_\n");
+      printf("messaging: r_make_messenger_cmd_\n");
       //XXX-3
     }
 
     t_void process(err::t_err err, r_destroy_messenger_cmd_ cmd) noexcept {
-      printf("thread process: r_destroy_messenger_cmd_\n");
+      printf("messaging: r_destroy_messenger_cmd_\n");
       //XXX-4
     }
 
     t_void process(err::t_err err, r_is_messenger_cmd_ cmd) noexcept {
-      printf("thread process: r_is_messenger_cmd_\n");
+      printf("messaging: r_is_messenger_cmd_\n");
       //XXX-5
     }
 
     t_void process(err::t_err err, r_is_messenger_info_cmd_ cmd) noexcept {
-      printf("thread process: r_is_messenger_info_cmd_\n");
+      printf("messaging: r_is_messenger_info_cmd_\n");
       //XXX-6
     }
 
     t_void process(err::t_err err, r_fetch_messengers_cmd_ cmd) noexcept {
-      printf("thread process: r_fetch_messengers_cmd_\n");
+      printf("messaging: r_fetch_messengers_cmd_\n");
       //XXX-7
     }
 
     t_void process(err::t_err err, r_create_group_cmd_ cmd) noexcept {
-      printf("thread process: r_create_group_cmd_\n");
+      printf("messaging: r_create_group_cmd_\n");
       //XXX-8
     }
 
     t_void process(err::t_err err, r_destroy_group_cmd_ cmd) noexcept {
-      printf("thread process: r_destroy_group_cmd_\n");
+      printf("messaging: r_destroy_group_cmd_\n");
       //XXX-9
     }
 
     t_void process(err::t_err err, r_is_group_cmd_ cmd) noexcept {
-      printf("thread process: r_is_group_cmd_\n");
+      printf("messaging: r_is_group_cmd_\n");
       //XXX-10
     }
 
     t_void process(err::t_err err, r_add_messenger_to_group_cmd_ cmd) noexcept {
-      printf("thread process: r_add_messenger_to_group_cmd_\n");
+      printf("messaging: r_add_messenger_to_group_cmd_\n");
       //XXX-11
     }
 
     t_void process(err::t_err err,
                    r_remove_messenger_from_group_cmd_ cmd) noexcept {
-      printf("thread process: r_remove_messenger_from_group_cmd_\n");
+      printf("messaging: r_remove_messenger_from_group_cmd_\n");
       //XXX-12
     }
 
     t_void process(err::t_err err, r_is_messenger_in_group_cmd_ cmd) noexcept {
-      printf("thread process: r_is_messenger_in_group_cmd_\n");
+      printf("messaging: r_is_messenger_in_group_cmd_\n");
       //XXX-13
     }
 
     t_void process(err::t_err err, r_fetch_messenger_groups_cmd_ cmd) noexcept {
-      printf("thread process: r_fetch_messenger_groups_cmd_\n");
+      printf("messaging: r_fetch_messenger_groups_cmd_\n");
       //XXX-14
     }
 
     t_void process(err::t_err err, r_who_is_cmd_ cmd) noexcept {
-      printf("thread process: r_who_is_cmd_\n");
+      printf("messaging: r_who_is_cmd_\n");
       //XXX-15
     }
 
     t_void process(err::t_err err, r_get_name_cmd_ cmd) noexcept {
-      printf("thread process: r_get_name_cmd_\n");
+      printf("messaging: r_get_name_cmd_\n");
       //XXX-16
     }
 
     t_void process(err::t_err err, r_get_params_cmd_ cmd) noexcept {
-      printf("thread process: r_get_params_cmd_\n");
+      printf("messaging: r_get_params_cmd_\n");
       //XXX-17
     }
 
     t_void process(err::t_err err, r_update_visibility_cmd_ cmd) noexcept {
-      printf("thread process: r_update_visibility_cmd_\n");
+      printf("messaging: r_update_visibility_cmd_\n");
       //XXX-18
     }
 
     t_void process(err::t_err err, r_update_alive_period_cmd_ cmd) noexcept {
-      printf("thread process: r_update_alive_period_cmd_\n");
+      printf("messaging: r_update_alive_period_cmd_\n");
       //XXX-19
     }
 
     t_void process(err::t_err err, r_start_timer_cmd_ cmd) noexcept {
-      printf("thread process: r_start_timer_cmd_\n");
+      printf("messaging: r_start_timer_cmd_\n");
       //XXX-20
     }
 
     t_void process(err::t_err err, r_stop_timer_cmd_ cmd) noexcept {
-      printf("thread process: r_stop_timer_cmd_\n");
+      printf("messaging: r_stop_timer_cmd_\n");
       //XXX-21
     }
 
     t_void process(err::t_err err, r_query_timer_cmd_ cmd) noexcept {
-      printf("thread process: r_query_timer_cmd_\n");
+      printf("messaging: r_query_timer_cmd_\n");
       //XXX-22
     }
 
     t_void process(err::t_err err, r_add_to_group_cmd_ cmd) noexcept {
-      printf("thread process: r_add_to_group_cmd_\n");
+      printf("messaging: r_add_to_group_cmd_\n");
       //XXX-23
     }
 
     t_void process(err::t_err err, r_remove_from_group_cmd_ cmd) noexcept {
-      printf("thread process: r_remove_from_group_cmd_\n");
+      printf("messaging: r_remove_from_group_cmd_\n");
       //XXX-24
     }
 
     t_void process(err::t_err err, r_is_in_group_cmd_ cmd) noexcept {
-      printf("thread process: r_is_in_group_cmd_\n");
+      printf("messaging: r_is_in_group_cmd_\n");
       //XXX-25
     }
 
     t_void process(err::t_err err, r_get_groups_cmd_ cmd) noexcept {
-      printf("thread process: r_get_groups_cmd_\n");
+      printf("messaging: r_get_groups_cmd_\n");
       //XXX-26
     }
 
     t_void process(err::t_err err, r_add_monitor_cmd_ cmd) noexcept {
-      printf("thread process: r_add_monitor_cmd_\n");
+      printf("messaging: r_add_monitor_cmd_\n");
       //XXX-27
     }
 
     t_void process(err::t_err err, r_remove_monitor_cmd_ cmd) noexcept {
-      printf("thread process: r_remove_monitor_cmd_\n");
+      printf("messaging: r_remove_monitor_cmd_\n");
       //XXX-28
     }
 
     t_void process(err::t_err err, r_is_monitored_cmd_ cmd) noexcept {
-      printf("thread process: r_is_monitored_cmd_\n");
+      printf("messaging: r_is_monitored_cmd_\n");
       //XXX-29
     }
 
     t_void process(err::t_err err, r_get_monitored_cmd_ cmd) noexcept {
-      printf("thread process: r_get_monitored_cmd_\n");
+      printf("messaging: r_get_monitored_cmd_\n");
       //XXX-30
     }
 
     t_void process(err::t_err err, r_clean_death_cmd_ cmd) noexcept {
-      printf("thread process: r_clean_death_cmd_\n");
+      printf("messaging: r_clean_death_cmd_\n");
       action_.cmd = QUIT_EVENT_LOOP;
     }
 
