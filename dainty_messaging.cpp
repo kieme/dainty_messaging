@@ -1077,8 +1077,8 @@ namespace message
     t_tmr_(R_messenger_timer_params _params) : params{_params} {
     }
   };
-  using t_tmr_lookup_       = std::map<t_messenger_key, t_timer_>;
-  using t_tmr_lookup_entry_ = t_timer_lookup_::value_type;
+  using t_tmr_lookup_       = std::map<t_messenger_key, t_tmr_>;
+  using t_tmr_lookup_entry_ = t_tmr_lookup_::value_type;
 
   struct t_alive_info_ {
     t_uint16            cnt;
@@ -1110,8 +1110,8 @@ namespace message
       : password{_password}, key{_key}, prio{_prio}, user{_user} {
     }
   };
-  using t_grp_lookup_      = std::map<t_messenger_name, t_grp_>;
-  using t_grp_lookup_entry_ = t_grp_::value_type;
+  using t_grp_lookup_       = std::map<t_messenger_name, t_grp_>;
+  using t_grp_lookup_entry_ = t_grp_lookup_::value_type;
 
   struct t_grp_ctxt_ {
     t_bool                 exist = {false};
@@ -1133,7 +1133,7 @@ namespace message
     }
   };
   using t_monitor_lookup_       = std::map<t_messenger_name, t_monitor_>;
-  using t_monitor_lookup_entry_ = t_monitor_::value_type;
+  using t_monitor_lookup_entry_ = t_monitor_lookup_::value_type;
 
   struct t_monitored_ {
     t_messenger_state  state = message::STATE_UNAVAILABLE;
@@ -1155,11 +1155,11 @@ namespace message
     t_data_(R_params _params) : params(_params) {
     }
 
-    t_msgr_ctxts_ msgr_ctxts_;
+    t_msgr_ctxts_       msgr_ctxts_;
     t_grp_ctxts_        grp_ctxts_;
     t_monitored_lookup_ monitored_;
-    t_tmr_lookup_       timers_;
     t_lookup_           lookup_;
+    t_tmr_lookup_       timers_;
   };
 
 ///////////////////////////////////////////////////////////////////////////////
