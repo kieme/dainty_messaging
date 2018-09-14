@@ -1067,8 +1067,9 @@ namespace message
 
 ///////////////////////////////////////////////////////////////////////////////
 
-  using t_prio_msgs_ = std::multimap<t_messenger_prio, t_any>;
-  using t_lookup_    = std::map<t_messenger_name, t_messenger_key>;
+  using t_prio_msgs_    = std::multimap<t_messenger_prio, t_any>;
+  using t_lookup_       = std::map<t_messenger_name, t_messenger_key>;
+  using t_lookup_entry_ = t_lookup_::value_type;
 
   struct t_tmr_ {
     t_messenger_timer_params params;
@@ -1157,7 +1158,6 @@ namespace message
     t_data_(R_params _params) : params(_params) {
     }
 
-  private:
     t_msgr_ctxts_       msgr_ctxts_;
     t_grp_ctxts_        grp_ctxts_;
     t_lookup_           lookup_;
@@ -1252,7 +1252,6 @@ namespace message
 
     virtual t_void async_process(t_user, p_command cmd) noexcept override {
       printf("messaging: p_command\n");
-      // not used
     }
 
     t_void process(err::t_err err, r_update_params_cmd_ cmd) noexcept {
@@ -1267,7 +1266,17 @@ namespace message
 
     t_void process(err::t_err err, r_make_messenger_cmd_ cmd) noexcept {
       printf("messaging: r_make_messenger_cmd_\n");
-      //XXX-3
+      auto p = data_.lookup_.insert(t_lookup_entry_{cmd.name,
+                                                    t_messenger_key{0}});
+      if (p.second) {
+        auto r = data_.msgr_ctxts_.insert(err);
+        if (r) {
+          return;
+        } else
+          err = err::E_XXX;
+        data_.lookup_.erase(p.first);
+      } else
+        err = err::E_XXX;
     }
 
     t_void process(err::t_err err, r_destroy_messenger_cmd_ cmd) noexcept {
