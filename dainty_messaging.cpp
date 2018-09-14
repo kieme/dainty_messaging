@@ -24,7 +24,9 @@
 
 ******************************************************************************/
 
+#include <map>
 #include "dainty_container_maybe.h"
+#include "dainty_container_freelist.h"
 #include "dainty_os_threading.h"
 #include "dainty_os_clock.h"
 #include "dainty_mt_event_dispatcher.h"
@@ -44,6 +46,7 @@ using namespace dainty::os;
 using string::FMT;
 using dainty::container::any::t_any;
 using dainty::container::maybe::t_maybe;
+using dainty::container::freelist::t_freelist;
 using dainty::os::threading::t_mutex_lock;
 using dainty::os::clock::t_time;
 using dainty::mt::thread::t_thread;
@@ -55,6 +58,7 @@ using dainty::mt::event_dispatcher::QUIT_EVENT_LOOP;
 using dainty::mt::event_dispatcher::RD;
 using dainty::messaging::messenger::t_multiple_of_100ms;
 using dainty::messaging::message::t_messenger_key_;
+using dainty::messaging::message::t_messenger_state;
 using dainty::tracing::make_tracer;
 
 using t_thd_err                = t_thread::t_logic::t_err;
@@ -69,6 +73,7 @@ using t_que_processor          = waitable_chained_queue::t_processor;
 using r_messenger_messages     = dainty::messaging::messenger::r_messages;
 using r_messenger_timer_params = dainty::messaging::messenger::r_timer_params;
 using R_messenger_timer_params = dainty::messaging::messenger::R_timer_params;
+using t_messenger_password     = dainty::messaging::messenger::t_password;
 using t_messenger_processor    = dainty::messaging::messenger::t_processor_;
 using r_messenger_monitor_list = dainty::messaging::messenger::r_monitor_list;
 using t_message                = dainty::messaging::message::t_message;
@@ -80,6 +85,8 @@ namespace dainty
 {
 namespace messaging
 {
+  constexpr message::t_domain MAIN{0};
+
 ////////////////////////////////////////////////////////////////////////////////
 
   tracing::t_tracer& tr_() {
@@ -167,7 +174,7 @@ namespace message
 {
 ///////////////////////////////////////////////////////////////////////////////
 
-  struct t_header_data_ {
+  struct t_hdr_ {
     t_n_             len;
     t_messenger_key_ dst;
     t_messenger_key_ src;
@@ -177,18 +184,18 @@ namespace message
     t_uint16         cnt;
     t_uint16         seq;
   };
-  using p_header_data_ = t_prefix<t_header_data_>::p_;
-  using P_header_data_ = t_prefix<t_header_data_>::P_;
+  using p_hdr_ = t_prefix<t_hdr_>::p_;
+  using P_hdr_ = t_prefix<t_hdr_>::P_;
 
-  t_bool write_header(r_message       msg,
-                      R_id            id,
-                      t_n             _len,
-                      R_messenger_key _dst,
-                      R_messenger_key _src,
-                      t_uint16        _cnt,
-                      t_uint16        _seq) {
-    if (get(msg.get_capacity()) >= sizeof(t_header_data_)) {
-      p_header_data_ hdr = (p_header_data_)msg.data();
+  t_bool write_hdr_(r_message       msg,
+                    R_id            id,
+                    t_n             _len,
+                    R_messenger_key _dst,
+                    R_messenger_key _src,
+                    t_uint16        _cnt,
+                    t_uint16        _seq) {
+    if (get(msg.get_capacity()) >= sizeof(t_hdr_)) {
+      p_hdr_ hdr = (p_hdr_)msg.data();
       hdr->len     = get(_len);
       hdr->dst     = get(_dst);
       hdr->src     = get(_src);
@@ -202,12 +209,9 @@ namespace message
     return false;
   }
 
-  t_bool write_header(r_message msg,
-                      R_id      id,
-                      t_n       _len,
-                      t_uint16  _cnt) {
-    if (get(msg.get_capacity()) >= sizeof(t_header_data_)) {
-      p_header_data_ hdr = (p_header_data_)msg.data();
+  t_bool write_hdr_(r_message msg, R_id id, t_n _len, t_uint16 _cnt) {
+    if (get(msg.get_capacity()) >= sizeof(t_hdr_)) {
+      p_hdr_ hdr = (p_hdr_)msg.data();
       hdr->len     = get(_len);
       hdr->domain  = get(id.domain);
       hdr->user    = get(id.user);
@@ -218,13 +222,13 @@ namespace message
     return false;
   }
 
-  t_bool write_header(r_message       msg,
-                      R_id            id,
-                      R_messenger_key _dst,
-                      R_messenger_key _src,
-                      t_uint16        _seq) {
-    if (get(msg.get_capacity()) >= sizeof(t_header_data_)) {
-      p_header_data_ hdr = (p_header_data_)msg.data();
+  t_bool write_hdr_(r_message       msg,
+                    R_id            id,
+                    R_messenger_key _dst,
+                    R_messenger_key _src,
+                    t_uint16        _seq) {
+    if (get(msg.get_capacity()) >= sizeof(t_hdr_)) {
+      p_hdr_ hdr = (p_hdr_)msg.data();
       hdr->dst     = get(_dst);
       hdr->src     = get(_src);
       hdr->domain  = get(id.domain);
@@ -236,11 +240,11 @@ namespace message
     return false;
   }
 
-  t_bool write_header(r_message       msg,
-                      R_messenger_key _dst,
-                      R_messenger_key _src) {
-    if (get(msg.get_capacity()) >= sizeof(t_header_data_)) {
-      p_header_data_ hdr = (p_header_data_)msg.data();
+  t_bool write_hdr_(r_message       msg,
+                    R_messenger_key _dst,
+                    R_messenger_key _src) {
+    if (get(msg.get_capacity()) >= sizeof(t_hdr_)) {
+      p_hdr_ hdr = (p_hdr_)msg.data();
       hdr->dst = get(_dst);
       hdr->src = get(_src);
       return true;
@@ -248,15 +252,15 @@ namespace message
     return false;
   }
 
-  t_bool read_header(R_message       msg,
-                     r_id            id,
-                     t_n&            _len,
-                     r_messenger_key _dst,
-                     r_messenger_key _src,
-                     t_uint16&       _cnt,
-                     t_uint16&       _seq) {
-    if (get(msg.get_capacity()) >= sizeof(t_header_data_)) {
-      P_header_data_ hdr = (P_header_data_)msg.cdata();
+  t_bool read_hdr_(R_message       msg,
+                   r_id            id,
+                   t_n&            _len,
+                   r_messenger_key _dst,
+                   r_messenger_key _src,
+                   t_uint16&       _cnt,
+                   t_uint16&       _seq) {
+    if (get(msg.get_capacity()) >= sizeof(t_hdr_)) {
+      P_hdr_ hdr = (P_hdr_)msg.cdata();
       set(_len)       = hdr->len;
       set(_dst)       = hdr->dst;
       set(_src)       = hdr->src;
@@ -272,8 +276,8 @@ namespace message
 
   inline
   t_messenger_key read_dst(R_message msg) {
-    if (msg == VALID && get(msg.get_capacity()) >= sizeof(t_header_data_)) {
-      P_header_data_ hdr = (P_header_data_)msg.cdata(); //XXX - hack
+    if (msg == VALID && get(msg.get_capacity()) >= sizeof(t_hdr_)) {
+      P_hdr_ hdr = (P_hdr_)msg.cdata(); //XXX - hack
       return t_messenger_key{hdr->dst};
     }
     return t_messenger_key{0};
@@ -281,8 +285,8 @@ namespace message
 
   inline
   t_messenger_key read_src(R_message msg) {
-    if (msg == VALID && get(msg.get_capacity()) >= sizeof(t_header_data_)) {
-      P_header_data_ hdr = (P_header_data_)msg.cdata(); //XXX - hack
+    if (msg == VALID && get(msg.get_capacity()) >= sizeof(t_hdr_)) {
+      P_hdr_ hdr = (P_hdr_)msg.cdata(); //XXX - hack
       return t_messenger_key{hdr->src};
     }
     return t_messenger_key{0};
@@ -290,8 +294,8 @@ namespace message
 
   inline
   t_n read_len(R_message msg) {
-    if (msg == VALID && get(msg.get_capacity()) >= sizeof(t_header_data_)) {
-      P_header_data_ hdr = (P_header_data_)msg.cdata(); //XXX - hack
+    if (msg == VALID && get(msg.get_capacity()) >= sizeof(t_hdr_)) {
+      P_hdr_ hdr = (P_hdr_)msg.cdata(); //XXX - hack
       return t_n{hdr->len};
     }
     return t_n{0};
@@ -299,8 +303,8 @@ namespace message
 
   inline
   t_id read_id(R_message msg) {
-    if (msg == VALID && get(msg.get_capacity()) >= (sizeof(t_header_data_))) {
-      P_header_data_ hdr = (P_header_data_)msg.cdata(); //XXX - hack
+    if (msg == VALID && get(msg.get_capacity()) >= (sizeof(t_hdr_))) {
+      P_hdr_ hdr = (P_hdr_)msg.cdata(); //XXX - hack
       return t_id{t_domain {hdr->domain},
                   t_user   {hdr->user},
                   t_version{hdr->version}};
@@ -310,10 +314,13 @@ namespace message
 
 ///////////////////////////////////////////////////////////////////////////////
 
-  t_message::t_message() : buf_{t_n{10}} {
+  t_message::t_message() {
   }
 
-  t_message::t_message(t_n n) : buf_{n} {
+  t_message::t_message(t_n n) : buf_{t_n{named::get(n) + sizeof(t_hdr_)}} {
+  }
+
+  t_message::t_message(R_bytebuf buf) : buf_{buf} {
   }
 
   t_message::t_message(x_message msg) : buf_{std::move(msg.buf_)} {
@@ -332,8 +339,8 @@ namespace message
     return *this;
   }
 
-  t_bool t_message::set(R_id, t_n len, t_uint16 cnt) {
-    return false;
+  t_bool t_message::set(R_id id, t_n len, t_uint16 cnt) {
+    return write_hdr_(*this, id, len, cnt);
   }
 
   t_bool t_message::get(r_id      id,
@@ -341,80 +348,269 @@ namespace message
                         t_key&    dst,
                         t_key&    src,
                         t_uint16& cnt) {
-    return false;
-  }
-
-  t_message::operator t_bool() const {
-    return false;
+    t_uint16 seq = 0;
+    return read_hdr_(*this, id, len, dst, src, cnt, seq);
   }
 
   t_message::operator t_validity () const {
-    return VALID;
-  }
-
-  t_bool t_message::is_empty() const {
-    return false;
+    return buf_;
   }
 
   t_n t_message::get_capacity() const {
-    return t_n{0};
+    return buf_.get_capacity();
   }
 
   p_byte t_message::data() {
-    return nullptr;
+    return buf_.ptr();
   }
 
   P_byte t_message::data() const {
-    return nullptr;
+    return buf_.ptr();
   }
 
   P_byte t_message::cdata() const {
-    return nullptr;
+    return buf_.cptr();
+  }
+
+  t_view t_message::mk_view() {
+    return container::bytebuf::mk_view(buf_);
+  }
+
+  t_cview t_message::mk_view() const {
+    return container::bytebuf::mk_cview(buf_);
+  }
+
+  t_cview t_message::mk_cview() const {
+    return container::bytebuf::mk_cview(buf_);
+  }
+
+  t_view t_message::mk_view(t_ix begin) {
+    return container::bytebuf::mk_view(buf_, begin);
+  }
+
+  t_cview t_message::mk_view(t_ix begin) const {
+    return container::bytebuf::mk_cview(buf_, begin);
+  }
+
+  t_cview t_message::mk_cview(t_ix begin) const {
+    return container::bytebuf::mk_cview(buf_, begin);
+  }
+
+  t_view t_message::mk_view(t_ix begin, t_ix end) {
+    return container::bytebuf::mk_view(buf_, begin, end);
+  }
+
+  t_cview t_message::mk_view(t_ix begin, t_ix end) const {
+    return container::bytebuf::mk_cview(buf_, begin, end);
+  }
+
+  t_cview t_message::mk_cview(t_ix begin, t_ix end) const {
+    return container::bytebuf::mk_cview(buf_, begin, end);
   }
 
   t_message t_message::clone() const {
-    return {};
+    return buf_;
   }
 
 ///////////////////////////////////////////////////////////////////////////////
 
-  t_notify_message::t_notify_message() {
-  }
+  struct t_notify_ {
+    t_messenger_state state;
+    t_messenger_key_  key;
+    t_messenger_prio_ prio;
+    t_messenger_user  user;
+    t_messenger_name  name;
+  };
+  using p_notify_ = t_prefix<t_notify_>::p_;
+  using P_notify_ = t_prefix<t_notify_>::P_;
 
-  t_bool t_notify_message::get(t_messenger_state&,
-                               t_messenger_name&,
-                               t_messenger_key&,
-                               t_messenger_prio&,
-                               t_messenger_user&) {
+  t_bool write_notify_msg_(r_message         msg,
+                           R_messenger_key   dst,
+                           t_messenger_state state,
+                           R_messenger_name  name,
+                           R_messenger_key   key,
+                           t_messenger_prio  prio,
+                           t_messenger_user  user) {
+    const t_n_ max = sizeof(t_hdr_) + sizeof(t_notify_);
+    if (msg == VALID && get(msg.get_capacity()) >= max) {
+      write_hdr_(msg, t_id{MAIN, t_user{MSG_NOTIFY}, t_version{1}},
+                 t_n{sizeof(t_notify_)}, dst, t_messenger_key{0}, 1, 0);
+      p_notify_ data = (p_notify_)(msg.data() + sizeof(t_hdr_));
+      data->state = state;
+      data->key   = get(key);
+      data->prio  = get(prio);
+      data->user  = user;
+      data->name  = name;
+      return true;
+    }
     return false;
   }
 
-///////////////////////////////////////////////////////////////////////////////
-
-  t_timeout_message::t_timeout_message() {
-  }
-
-  t_bool t_timeout_message::get(t_bool& periodic,
-               t_multiple_of_100ms&,
-               t_messenger_key&,
-               t_messenger_prio&,
-               t_messenger_user&) {
+  t_bool read_notify_msg_(R_message          msg,
+                          t_messenger_state& state,
+                          t_messenger_name&  name,
+                          t_messenger_key&   key,
+                          t_messenger_prio&  prio,
+                          t_messenger_user&  user) {
+    const t_n_ max = sizeof(t_hdr_) + sizeof(t_notify_);
+    if (msg == VALID && get(msg.get_capacity()) >= max) {
+      P_notify_ data = (P_notify_)(msg.cdata() + sizeof(t_hdr_));
+      state      = data->state;
+      set(key)   = data->key;
+      set(prio)  = data->prio;
+      user       = data->user;
+      name       = data->name;
+      return true;
+    }
     return false;
   }
 
-///////////////////////////////////////////////////////////////////////////////
+  t_notify_message::t_notify_message() : t_message{t_n{sizeof(t_notify_)}} {
+  }
 
-  t_bool t_fail_message::get(reason_t&, r_message send_message) {
-    return false;
+  t_bool t_notify_message::get(t_messenger_state& state,
+                               t_messenger_name&  name,
+                               t_messenger_key&   key,
+                               t_messenger_prio&  prio,
+                               t_messenger_user&  user) {
+    return read_notify_msg_(*this, state, name, key, prio, user);
   }
 
 ///////////////////////////////////////////////////////////////////////////////
 
-  t_alive_message::t_alive_message() {
+  struct t_timeout_ {
+    t_bool            periodic;
+    t_messenger_key_  key;
+    t_n_              multiple;
+    t_messenger_prio_ prio;
+    t_messenger_user  user;
+  };
+  using p_timeout_ = t_prefix<t_timeout_>::p_;
+  using P_timeout_ = t_prefix<t_timeout_>::P_;
+
+  t_bool write_timeout_msg_(r_message           msg,
+                            t_bool              periodic,
+                            t_multiple_of_100ms multiple,
+                            R_messenger_key     key,
+                            t_messenger_prio    prio,
+                            t_messenger_user    user) {
+    const t_n_ max = sizeof(t_hdr_) + sizeof(t_timeout_);
+    if (msg == VALID && get(msg.get_capacity()) >= max) { // XXX
+      write_hdr_(msg, t_id{MAIN, t_user{MSG_TIMEOUT}, t_version{1}},
+                 t_n{sizeof(t_timeout_)}, key, t_messenger_key{0}, 1, 0);
+      p_timeout_ data = (p_timeout_)(msg.data() + sizeof(t_hdr_));
+      data->periodic = periodic;
+      data->key      = get(key);
+      data->prio     = get(prio);
+      data->user     = user;
+      data->multiple = get(multiple.value);
+      return true;
+    }
+    return false;
+  }
+
+  t_bool read_timeout_msg_(R_message            msg,
+                           t_bool&              periodic,
+                           t_multiple_of_100ms& multiple,
+                           t_messenger_key&     key,
+                           t_messenger_prio&    prio,
+                           t_messenger_user&    user) {
+    const t_n_ max = sizeof(t_hdr_) + sizeof(t_timeout_);
+    if (msg == VALID && get(msg.get_capacity()) >= max) { // XXX
+      P_timeout_ data = (P_timeout_)(msg.cdata() + sizeof(t_timeout_));
+      periodic            = data->periodic;
+      set(key)            = data->key;
+      set(prio)           = data->prio;
+      user                = data->user;
+      set(multiple.value) = data->multiple;
+      return true;
+    }
+    return false;
+  }
+
+  t_timeout_message::t_timeout_message() : t_message{t_n{sizeof(t_timeout_)}} {
+  }
+
+  t_bool t_timeout_message::get(t_bool&              periodic,
+                                t_multiple_of_100ms& multiple,
+                                t_messenger_key&     key,
+                                t_messenger_prio&    prio,
+                                t_messenger_user&    user) {
+    return read_timeout_msg_(*this, periodic, multiple, key, prio, user);
+  }
+
+///////////////////////////////////////////////////////////////////////////////
+
+  t_bool write_fail_msg_(r_message                msg,
+                         t_fail_message::t_reason reason,
+                         R_messenger_key          key,
+                         R_message                fail_msg) {
+    const t_n_ max = sizeof(t_hdr_) + get(fail_msg.get_capacity());
+    if (msg == VALID && fail_msg == VALID && get(msg.get_capacity()) >= max) {
+      write_hdr_(msg, t_id{MAIN, t_user{MSG_FAIL}, t_version{1}},
+                 fail_msg.get_capacity(), key, key, 1, 0);
+      msg.mk_view(t_ix{sizeof(t_hdr_)},
+                  t_ix{sizeof(t_hdr_) + get(fail_msg.get_capacity())}) =
+        fail_msg.mk_view();
+      return true;
+    }
+    return false;
+  }
+
+  t_bool read_fail_msg_(R_message                 msg,
+                        t_fail_message::t_reason& reason,
+                        r_message                 fail_msg) {
+    const t_n_ max = sizeof(t_hdr_) + get(fail_msg.get_capacity());
+    if (msg == VALID && fail_msg == VALID && get(msg.get_capacity()) >= max) {
+      P_hdr_ data = (P_hdr_)msg.cdata();
+      t_n_   len  = data->len;
+      reason      = (t_fail_message::t_reason)data->user;
+
+      if (fail_msg == INVALID || len > get(fail_msg.get_capacity())) {
+        t_message tmp{t_n{len}};
+        fail_msg = std::move(tmp);
+      }
+      if (fail_msg == VALID) {
+        fail_msg.mk_view() = msg.mk_view(t_ix{sizeof(t_hdr_)}, t_ix{len});
+        return true;
+      }
+    }
+    return false;
+  }
+
+  t_bool t_fail_message::get(t_reason& reason, r_message fail_msg) {
+    return read_fail_msg_(*this, reason, fail_msg);
+  }
+
+///////////////////////////////////////////////////////////////////////////////
+
+  struct t_alive_ {
+    int i_;
+  };
+
+  t_bool write_alive_msg_(r_message msg, R_messenger_key key) {
+    const t_n_ max = sizeof(t_hdr_) + sizeof(t_alive_);
+    if (msg == VALID && get(msg.get_capacity()) >= max) {
+      write_hdr_(msg, t_id{MAIN, t_user{MSG_ALIVE}, t_version{1}},
+                 t_n{sizeof(t_alive_)}, key, t_messenger_key{0}, 1, 0);
+      return true;
+    }
+    return false;
+  }
+
+  t_bool read_alive_msg_(R_message msg) {
+    const t_n_ max = sizeof(t_hdr_) + sizeof(t_alive_);
+    if (msg == VALID && get(msg.get_capacity()) >= max) {
+      return true;
+    }
+    return false;
+  }
+
+  t_alive_message::t_alive_message() : t_message{t_n{sizeof(t_alive_)}} {
   }
 
   t_bool t_alive_message::get() {
-    return false;
+    return read_alive_msg_(*this);
   }
 }
 
@@ -422,8 +618,10 @@ namespace message
 
   struct t_item_ {
     t_message       msg;
-    t_messenger_key id  = t_messenger_key{0};
-    t_messenger_key key = t_messenger_key{0};
+    t_messenger_key id    = t_messenger_key{0};
+    t_messenger_key key   = t_messenger_key{0};
+    t_messenger_user user = t_messenger_user{0L};
+    t_messenger_prio prio = t_messenger_prio{0};
   };
   using R_item_ = t_prefix<t_item_>::R_;
 
@@ -867,12 +1065,101 @@ namespace message
 
 ///////////////////////////////////////////////////////////////////////////////
 
+  using t_prio_msgs_ = std::multimap<t_messenger_prio, t_any>;
+  using t_lookup_    = std::map<t_messenger_name, t_messenger_key>;
+
+  struct t_tmr_ {
+    t_messenger_timer_params params;
+    t_time                   start;
+    t_multiple_of_100ms      cnt = t_multiple_of_100ms{0};
+    t_messenger_key          key = t_messenger_key{0};
+
+    t_tmr_(R_messenger_timer_params _params) : params{_params} {
+    }
+  };
+  using t_tmr_lookup_       = std::map<t_messenger_key, t_timer_>;
+  using t_tmr_lookup_entry_ = t_timer_lookup_::value_type;
+
+  struct t_alive_info_ {
+    t_uint16            cnt;
+    t_multiple_of_100ms current;
+    t_multiple_of_100ms max;
+
+    t_alive_info_() : cnt{0}, current{0}, max{2} {
+    }
+  };
+
+  struct t_msgr_ctxt_ {
+    t_messenger_processor processor;
+    t_alive_info_         alive;
+    t_messenger_info      info;
+
+    t_msgr_ctxt_(t_err err) : processor{err, t_n{200}} {
+    }
+  };
+  using t_msgr_ctxts_ = t_freelist<t_msgr_ctxt_, 300>;
+
+  struct t_grp_ {
+    t_messenger_password password;
+    t_messenger_key      key;
+    t_messenger_prio     prio;
+    t_messenger_user     user;
+
+    t_grp_(R_messenger_password _password, R_messenger_key _key,
+           t_messenger_prio _prio, t_messenger_user _user)
+      : password{_password}, key{_key}, prio{_prio}, user{_user} {
+    }
+  };
+  using t_grp_lookup_      = std::map<t_messenger_name, t_grp_>;
+  using t_grp_lookup_entry_ = t_grp_::value_type;
+
+  struct t_grp_ctxt_ {
+    t_bool                 exist = {false};
+    t_messenger_key        key   = t_messenger_key{0};
+    t_messenger_visibility visibility;
+    t_messenger_name       name;
+    t_password             password;
+    t_grp_lookup_          members;
+  };
+  using t_grp_ctxts_ = t_freelist<t_grp_ctxt_, 2000>;
+
+  struct t_monitor_ {
+    t_messenger_key  key;
+    t_messenger_prio prio;
+    t_messenger_user user;
+
+    t_monitor_(R_messenger_key _key, t_messenger_prio _prio,
+               t_messenger_user _user) : key{_key}, prio{_prio}, user{_user} {
+    }
+  };
+  using t_monitor_lookup_       = std::map<t_messenger_name, t_monitor_>;
+  using t_monitor_lookup_entry_ = t_monitor_::value_type;
+
+  struct t_monitored_ {
+    t_messenger_state  state = message::STATE_UNAVAILABLE;
+    t_messenger_key    key   = t_messenger_key{0};
+    t_monitor_lookup_  by;
+
+    t_monitored_(R_messenger_key _key) : key{_key} {
+    }
+  };
+  using t_monitored_lookup_      = std::map<t_messenger_name, t_monitored_>;
+  using t_monitored_lookup_entry = t_monitored_lookup_::value_type;
+
+///////////////////////////////////////////////////////////////////////////////
+
   class t_data_ {
   public:
     t_params params;
 
     t_data_(R_params _params) : params(_params) {
     }
+
+    t_msgr_ctxts_ msgr_ctxts_;
+    t_grp_ctxts_        grp_ctxts_;
+    t_monitored_lookup_ monitored_;
+    t_tmr_lookup_       timers_;
+    t_lookup_           lookup_;
   };
 
 ///////////////////////////////////////////////////////////////////////////////

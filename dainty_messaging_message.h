@@ -43,6 +43,7 @@ namespace message
   using named::t_bool;
   using named::t_n_;
   using named::t_n;
+  using named::t_ix;
   using named::t_validity;
   using named::VALID;
   using named::INVALID;
@@ -54,10 +55,12 @@ namespace message
 
   using container::bytebuf::p_byte;
   using container::bytebuf::P_byte;
+  using container::bytebuf::t_view;
+  using container::bytebuf::t_cview;
 
   enum  t_bytebuf_tag_ { };
   using t_bytebuf = container::bytebuf::t_bytebuf<t_bytebuf_tag_, 0>;
-  using x_bytebuf = named::t_prefix<t_bytebuf>::x_;
+  using R_bytebuf = named::t_prefix<t_bytebuf>::R_;
 
   enum t_type {
     MSG_NOTIFY,
@@ -130,8 +133,8 @@ namespace message
 
   class t_message {
   public:
-    using t_key = t_messenger_key;
-    using r_key = r_messenger_key;
+    using t_key   = t_messenger_key;
+    using r_key   = r_messenger_key;
 
     t_message();
     t_message(t_n);
@@ -148,19 +151,31 @@ namespace message
                r_key      src,
                t_uint16&  cnt);
 
-    operator t_bool    () const;
     operator t_validity() const;
-
-    t_bool  is_empty    () const;
-    t_n     get_capacity() const;
+    t_n get_capacity() const;
 
     p_byte  data();
     P_byte  data() const;
     P_byte cdata() const;
 
+    t_view  mk_view ();
+    t_cview mk_view () const;
+    t_cview mk_cview() const;
+
+    t_view  mk_view (t_ix begin);
+    t_cview mk_view (t_ix begin) const;
+    t_cview mk_cview(t_ix begin) const;
+
+    t_view  mk_view (t_ix begin, t_ix end);
+    t_cview mk_view (t_ix begin, t_ix end) const;
+    t_cview mk_cview(t_ix begin, t_ix end) const;
+
     t_message clone() const;
 
   private:
+    t_message(R_bytebuf);
+
+  protected:
     t_bytebuf buf_;
   };
 
@@ -234,7 +249,7 @@ namespace message
 
   class t_fail_message : public t_message {
   public:
-    enum reason_t {
+    enum t_reason {
       reason_messenger_noexist = 1
     };
 
@@ -252,7 +267,7 @@ namespace message
       return *this;
     }
 
-    t_bool get(reason_t&, r_message send_message);
+    t_bool get(t_reason&, r_message send_message);
   };
 
 ///////////////////////////////////////////////////////////////////////////////
