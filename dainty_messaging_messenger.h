@@ -57,13 +57,13 @@ namespace messenger
   using message::t_multiple_of_100ms;
 
   using t_user       = message::t_messenger_user;
+  using p_user       = t_prefix<t_user>::p_;
   using t_key        = message::t_messenger_key;
-  using t_name       = message::t_messenger_name;
-  using t_prio       = message::t_messenger_prio;
   using R_key        = t_prefix<t_key>::R_;
+  using t_prio       = message::t_messenger_prio;
+  using t_name       = message::t_messenger_name;
   using r_name       = t_prefix<t_name>::r_;
   using R_name       = t_prefix<t_name>::R_;
-  using p_user       = t_prefix<t_user>::p_;
   using t_messages   = container::list::t_list<t_message>;
   using r_messages   = t_prefix<t_messages>::r_;
   using t_processor_ = mt::chained_queue::t_processor;

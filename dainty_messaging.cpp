@@ -59,8 +59,10 @@ using dainty::mt::event_dispatcher::RD;
 using dainty::messaging::messenger::t_multiple_of_100ms;
 using dainty::messaging::message::t_messenger_key_;
 using dainty::messaging::message::t_messenger_state;
+using dainty::messaging::message::t_messenger_prio;
 using dainty::tracing::make_tracer;
 
+using t_ctxt_id                = dainty::container::freelist::t_id;
 using t_thd_err                = t_thread::t_logic::t_err;
 using t_cmd_err                = command::t_processor::t_logic::t_err;
 using t_cmd_client             = command::t_client;
@@ -70,6 +72,8 @@ using t_any_user               = any::t_user;
 using t_que_chain              = waitable_chained_queue::t_chain;
 using t_que_client             = waitable_chained_queue::t_client;
 using t_que_processor          = waitable_chained_queue::t_processor;
+using t_messenger_key          = dainty::messaging::messenger::t_key;
+using R_messenger_key          = dainty::messaging::messenger::R_key;
 using r_messenger_messages     = dainty::messaging::messenger::r_messages;
 using r_messenger_timer_params = dainty::messaging::messenger::r_timer_params;
 using R_messenger_timer_params = dainty::messaging::messenger::R_timer_params;
@@ -78,11 +82,20 @@ using t_messenger_processor    = dainty::messaging::messenger::t_processor_;
 using r_messenger_monitor_list = dainty::messaging::messenger::r_monitor_list;
 using t_message                = dainty::messaging::message::t_message;
 using x_message                = dainty::messaging::message::x_message;
-using R_messenger_key          = t_prefix<t_messenger_key_>::R_;
-using r_messenger_key          = t_prefix<t_messenger_key_>::R_;
 
 namespace dainty
 {
+namespace named
+{
+  inline t_bool operator<(R_messenger_key lh, R_messenger_key rh) {
+    return get(lh) < get(rh);
+  }
+
+  inline t_bool operator<(t_messenger_prio lh, t_messenger_prio rh) {
+    return get(lh) < get(rh);
+  }
+}
+
 namespace messaging
 {
   constexpr message::t_domain MAIN{0};
@@ -111,44 +124,35 @@ namespace messaging
     return get(lh) != get(rh);
   }
 
-  inline t_bool operator<(R_messenger_key lh, R_messenger_key rh) {
-    return get(lh) < get(rh);
-  }
-
 ////////////////////////////////////////////////////////////////////////////////
 
-  inline t_bool operator<(t_messenger_prio lh, t_messenger_prio rh) {
-    return get(lh) < get(rh);
-  }
-
-////////////////////////////////////////////////////////////////////////////////
-
+  //XXX not correct
   struct t_messenger_key_params {
-    t_bool   group = false;
-    t_bool   local = false;
-    t_uint16 id    = 0;
-    t_uint16 seq   = 0;
+    t_bool    group = false;
+    t_bool    local = false;
+    t_ctxt_id id    = t_ctxt_id{0};
+    t_uint16  seq   = 0;
 
     inline t_messenger_key_params() = default;
-    inline t_messenger_key_params(t_bool _group, t_bool _local, t_uint16 _id,
+    inline t_messenger_key_params(t_bool _group, t_bool _local, t_ctxt_id _id,
                                   t_uint16 _seq)
       : group(_group), local(_local), id(_id), seq(_seq) {
     }
   };
 
-  inline t_messenger_key make_key(t_uint16 seq, t_uint16 id) {
-    return t_messenger_key(((t_messenger_key_)id  << 1) |
+  inline t_messenger_key make_key(t_uint16 seq, t_ctxt_id id) {
+    return t_messenger_key(((t_messenger_key_)get(id)  << 1) |
                            ((t_messenger_key_)seq << 16));
   }
 
-  inline t_messenger_key make_group_key(t_uint16 seq, t_uint16 id) {
+  inline t_messenger_key make_group_key(t_uint16 seq, t_ctxt_id id) {
     return t_messenger_key(get(make_key(seq, id)) | 1);
   }
 
   inline t_messenger_key make_remote_key(t_uint16 remote_seq,
-                                         t_uint16 remote_id,
+                                         t_ctxt_id remote_id,
                                          R_messenger_key key) {
-    return t_messenger_key(((t_messenger_key_)remote_id  << 32) |
+    return t_messenger_key(((t_messenger_key_)get(remote_id)  << 32) |
                            ((t_messenger_key_)remote_seq << 48) | get(key));
   }
 
@@ -166,8 +170,8 @@ namespace messaging
 
   inline t_messenger_key_params get_key_params(R_messenger_key key) {
     return t_messenger_key_params(is_group(key), is_local(key),
-                                  (t_uint16)(0xff & (get(key) >> 48)),
-                                  (t_uint16)(0xff & (get(key) >> 32)));
+                                  t_ctxt_id{0xff & (get(key) >> 32)},
+                                  (t_uint16)(0xff & (get(key) >> 48)));
   }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -619,9 +623,9 @@ namespace message
 ///////////////////////////////////////////////////////////////////////////////
 
   struct t_item_ {
-    t_message       msg;
-    t_messenger_key id    = t_messenger_key{0};
-    t_messenger_key key   = t_messenger_key{0};
+    t_message        msg;
+    t_messenger_key  id   = t_messenger_key{0};
+    t_messenger_key  key  = t_messenger_key{0};
     t_messenger_user user = t_messenger_user{0L};
     t_messenger_prio prio = t_messenger_prio{0};
   };
@@ -1067,18 +1071,16 @@ namespace message
 
 ///////////////////////////////////////////////////////////////////////////////
 
-  using t_prio_msgs_    = std::multimap<t_messenger_prio, t_any>;
-  using t_lookup_       = std::map<t_messenger_name, t_messenger_key>;
-  using t_lookup_entry_ = t_lookup_::value_type;
+  using t_prio_msgs_       = std::multimap<t_messenger_prio, t_message>;
+  using r_prio_msgs_       = t_prefix<t_prio_msgs_>::r_;
+  using t_prio_msgs_entry_ = t_prio_msgs_::value_type;
+  using t_lookup_          = std::map<t_messenger_name, t_messenger_key>;
+  using t_lookup_entry_    = t_lookup_::value_type;
 
   struct t_tmr_ {
     t_messenger_timer_params params;
     t_time                   start;
     t_multiple_of_100ms      cnt = t_multiple_of_100ms{0};
-    t_messenger_key          key = t_messenger_key{0};
-
-    t_tmr_(R_messenger_timer_params _params) : params{_params} {
-    }
   };
   using t_tmr_lookup_       = std::map<t_messenger_key, t_tmr_>;
   using t_tmr_lookup_entry_ = t_tmr_lookup_::value_type;
@@ -1100,6 +1102,7 @@ namespace message
     t_msgr_ctxt_(t_err err) : processor{err, t_n{200}} {
     }
   };
+  using r_msgr_ctxt_  = t_prefix<t_msgr_ctxt_>::r_;
   using t_msgr_ctxts_ = t_freelist<t_msgr_ctxt_, 300>;
 
   struct t_grp_ {
@@ -1124,6 +1127,7 @@ namespace message
     t_password             password;
     t_grp_lookup_          members;
   };
+  using R_grp_ctxt_  = t_prefix<t_grp_ctxt_>::R_;
   using t_grp_ctxts_ = t_freelist<t_grp_ctxt_, 2000>;
 
   struct t_monitor_ {
@@ -1146,6 +1150,7 @@ namespace message
     t_monitored_(R_messenger_key _key) : key{_key} {
     }
   };
+  using R_monitored_ = t_prefix<t_monitored_>::R_;
   using t_monitored_lookup_      = std::map<t_messenger_name, t_monitored_>;
   using t_monitored_lookup_entry = t_monitored_lookup_::value_type;
 
@@ -1158,6 +1163,248 @@ namespace message
     t_data_(R_params _params) : params(_params) {
     }
 
+    t_void update_prio_messages(r_prio_msgs_      msgs,
+                                R_messenger_name  name,
+                                t_messenger_state state,
+                                R_messenger_key   key,
+                                R_grp_ctxt_       grp) {
+      for (auto& member : grp.members) {
+        auto key_params{get_key_params(member.second.key)};
+        if (key_params.local) {
+          if (!key_params.group) {
+            message::t_notify_message msg;
+            message::write_notify_msg_(msg,
+                                       member.second.key,
+                                       state,
+                                       name,
+                                       key,
+                                       member.second.prio,
+                                       member.second.user);
+            msgs.insert(t_prio_msgs_entry_{member.second.prio, std::move(msg)});
+          } else {
+            auto grp_ctxt{grp_ctxts_.get(key_params.id)};
+            if (grp_ctxt && grp_ctxt->exist)
+              update_prio_messages(msgs, name, state, key, *grp_ctxt);
+          }
+        } else {
+           // see if remote is on same unit
+        }
+      }
+    }
+
+    t_void update_prio_messages(r_prio_msgs_     msgs,
+                                R_messenger_name name,
+                                R_monitored_     monitored) {
+      for (auto& monitor : monitored.by) {
+        message::t_notify_message msg;
+        message::write_notify_msg_(msg,
+                                   monitor.second.key,
+                                   monitored.state,
+                                   name,
+                                   monitored.key,
+                                   monitor.second.prio,
+                                   monitor.second.user);
+        msgs.insert(t_prio_msgs_entry_{monitor.second.prio, std::move(msg)});
+      }
+    }
+
+    t_void update_new_messenger(r_prio_msgs_ msgs, r_msgr_ctxt_ ctxt) {
+      auto m = monitored_.find(ctxt.info.name);
+      if (m != monitored_.end()) {
+        m->second.key   = ctxt.info.key;
+        m->second.state = message::STATE_AVAILABLE;
+        update_prio_messages(msgs, m->first, m->second);
+      }
+      if (get(ctxt.info.params.timer_params.factor.value)) {
+        auto& params = ctxt.info.params.timer_params;
+        auto& tmr  = timers_[ctxt.info.key];
+        tmr.params = params;
+        tmr.cnt    = t_multiple_of_100ms{0};
+        tmr.start  = t_time(); // timestamp
+      }
+    }
+
+    t_void add_messenger(err::t_err& err, r_prio_msgs_ msgs,
+                         r_make_messenger_cmd_ cmd) {
+      auto p = lookup_.insert(t_lookup_entry_{cmd.name, t_messenger_key{0}});
+      if (p.second) {
+        auto r = msgr_ctxts_.insert(err, t_msgr_ctxt_{err});
+        if (r) {
+          auto& info = r->info;
+          info.key = p.first->second = make_key(0, r.id_); //XXX
+          info.name   = cmd.name;
+          info.params = cmd.params;
+          update_new_messenger(msgs, *r);
+          //cmd - XXX return end
+          return;
+        }
+        lookup_.erase(p.first);
+      } else
+        err = err::E_XXX;
+    }
+
+    t_void remove_messenger(r_prio_msgs_ msgs, r_msgr_ctxt_ ctxt) {
+      for (auto& monitor : ctxt.info.params.monitor) {
+        auto m = monitored_.find(i->first);
+        r_monitored entry = p->second;
+          entry.members_.erase(ctxt.info_.name_);
+          if (entry.members_.empty())
+            ctxt_t::monitored_lookup().erase(p);
+      }
+
+      /*
+      messenger_memberlist_t& groups = ctxt.info_.params_.groups_;
+      for (messenger_memberlist_t::iterator i = groups.begin();
+          i != groups.end(); ++i)
+         process_remove_messenger_from_group(i->second.password_,
+                                             ctxt.info_.name_,
+                                             i->first, 0);
+      */
+      //process_remove_messenger_from_groups(ctxt.info_.name_);
+      //xxx
+
+      ctxt_t::timer_list().erase(ctxt.info_.key_);
+
+      monitored_lookup_t::iterator p(ctxt_t::monitored_lookup().find(
+        ctxt.info_.name_));
+      if (p != ctxt_t::monitored_lookup().end()) {
+        set(p->second.key_) = 0;
+        p->second.state_ = messenger_state_unavailable;
+        update_prio_messages(prio_messages, p->first, p->second);
+      }
+    }
+
+    t_bool add_messenger_to_group(prio_messages_t& prio_messages,
+                                  const password_t& password,
+                                  const messenger_name_t& name,
+                                  const messenger_name_t& group,
+                                  messenger_prio_t prio,
+                                  messenger_user_t user) {
+      messenger_lookup_t& lookup = ctxt_t::messenger_lookup();
+      messenger_lookup_t::iterator i(lookup.find(name));
+      if (i != lookup.end()) {
+        messenger_name_t mod_name(string::cstr, "@");
+        const messenger_name_t* gn = &group;
+        if (*group.c_str() != '@') {
+          mod_name += group;
+          gn = &mod_name;
+        }
+
+        messenger_grouplookup_t& glookup = ctxt_t::messenger_grouplookup();
+        std::pair<messenger_grouplookup_t::iterator, bool> j(
+          glookup.insert(messenger_grouplookup_t::value_type(name,
+                           messenger_memberlist_t())));
+        if (j.second)
+          j.first->second.insert(messenger_memberlist_t::value_type(
+                                   *gn, messenger_member_t(password, prio,
+                                                           user)));
+        else if (j.first != glookup.end()) {
+          messenger_memberlist_t& members = j.first->second;
+          std::pair<messenger_memberlist_t::iterator, bool> k(
+            members.insert(messenger_memberlist_t::value_type(
+              *gn, messenger_member_t(password, prio, user))));
+          if (!k.second && k.first != members.end())
+            return false;
+        } else
+          return false;
+
+        messenger_lookup_t::value_type tmp(*gn, messenger_key_t(0));
+        std::pair<messenger_lookup_t::iterator, bool> p(
+          ctxt_t::messenger_lookup().insert(tmp));
+        if (p.second) {
+          messengergroup_freelist_t::result_t r(
+            ctxt_t::messengergroup_list().insert());
+          if (r) {
+            p.first->second = make_group_key(++ctxt_t::grpseq(),
+                                             get(r.id_));
+            messenger_groupinfo_t* info = r.ptr_;
+            info->name_  = *gn;
+            info->key_   = p.first->second;
+            info->exist_ = false;
+            memberlist_t::value_type tmp(
+              i->first, member_t(password, i->second, prio, user));
+            info->members_.insert(tmp);
+            return true;
+          }
+          ctxt_t::messenger_lookup().erase(p.first);
+        } else if (p.first != ctxt_t::messenger_lookup().end()) {
+          bool_t local = false, group = false;
+          ushort_t seq = 0, id = 0;
+          if (get_key_params(p.first->second, local, group, seq, id) &&
+              local && group) {
+            messenger_groupinfo_t* info = ctxt_t::messengergroup_list()
+              .get(nfreelist_id_t(id));
+            if (info) {
+              memberlist_t::value_type
+                tmp(i->first, member_t(password, i->second, prio, user));
+              if (info->members_.insert(tmp).second) {
+                if (info->exist_) {
+                  update_prio_messages(prio_messages, *gn,
+                                       messenger_state_available,
+                                       info->key_, *info);
+                }
+                return true;
+              }
+            }
+          }
+        }
+        if (j.first->second.size() == 1)
+          glookup.erase(j.first);
+        else
+          j.first->second.erase(*gn);
+      }
+      return false;
+    }
+
+    t_bool remove_messenger_from_group(const password_t& password,
+                                       const messenger_name_t& name,
+                                       const messenger_name_t& group,
+                                       messenger_user_t* user) {
+      messenger_name_t mod_name(string::cstr, "@");
+      const messenger_name_t* gn = &group;
+      if (*group.c_str() != '@') {
+        mod_name += group;
+        gn = &mod_name;
+      }
+      messenger_lookup_t& lookup = ctxt_t::messenger_lookup();
+      messenger_lookup_t::iterator i(lookup.find(*gn));
+      if (i != lookup.end()) {
+        bool_t local = false, group = false;
+        ushort_t seq = 0, id = 0;
+        if (get_key_params(i->second, local, group, seq, id) &&
+            local && group) {
+          messenger_groupinfo_t* info = ctxt_t::messengergroup_list()
+            .get(nfreelist_id_t(id));
+          if (info) {
+            memberlist_t& list = info->members_;
+            memberlist_t::iterator j(list.find(name));
+            if (j != list.end()) {
+              if (j->second.password_ == password) {
+                if (user)
+                  *user = j->second.user_;
+                list.erase(j);
+                if (list.empty() && !info->exist_) {
+                  ctxt_t::messengergroup_list().erase(nfreelist_id_t(id));
+                  lookup.erase(i);
+                }
+
+                messenger_grouplookup_t& glookup =
+                  ctxt_t::messenger_grouplookup();
+                messenger_grouplookup_t::iterator k(glookup.find(name));
+                if (k->second.size() == 1)
+                  glookup.erase(k);
+                else
+                  k->second.erase(*gn);
+                return true;
+              }
+            }
+          }
+        }
+      }
+      return false;
+    }
+
+  private:
     t_msgr_ctxts_       msgr_ctxts_;
     t_grp_ctxts_        grp_ctxts_;
     t_lookup_           lookup_;
@@ -1172,7 +1419,7 @@ namespace message
                    public t_que_processor::t_logic,
                    public t_dispatcher::t_logic {
   public:
-    t_logic_(err::t_err err, R_params params)
+    t_logic_(err::t_err& err, R_params params)
       : data_         {params},
         cmd_processor_{err},
         que_processor_{err, data_.params.queuesize},
@@ -1266,17 +1513,7 @@ namespace message
 
     t_void process(err::t_err err, r_make_messenger_cmd_ cmd) noexcept {
       printf("messaging: r_make_messenger_cmd_\n");
-      auto p = data_.lookup_.insert(t_lookup_entry_{cmd.name,
-                                                    t_messenger_key{0}});
-      if (p.second) {
-        auto r = data_.msgr_ctxts_.insert(err);
-        if (r) {
-          return;
-        } else
-          err = err::E_XXX;
-        data_.lookup_.erase(p.first);
-      } else
-        err = err::E_XXX;
+      data_.add_messenger(err, cmd);
     }
 
     t_void process(err::t_err err, r_destroy_messenger_cmd_ cmd) noexcept {
