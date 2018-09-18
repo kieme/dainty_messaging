@@ -124,7 +124,6 @@ namespace messaging
   class t_params {
   public:
     t_visibility visibility;
-    t_name       name;
     t_n          queuesize = t_n{4000};
 
     inline t_params() : visibility{VISIBILITY_OFF} {
@@ -133,8 +132,8 @@ namespace messaging
     inline t_params(t_visibility _visibility) : visibility{_visibility} {
     }
 
-    inline t_params(t_visibility _visibility, R_name _name, t_n _queuesize)
-      : visibility{_visibility}, name{_name}, queuesize{_queuesize} {
+    inline t_params(t_visibility _visibility, t_n _queuesize)
+      : visibility{_visibility}, queuesize{_queuesize} {
     }
   };
   using r_params = t_prefix<t_params>::r_;
@@ -171,7 +170,7 @@ namespace messaging
 
   t_bool is_running();
 
-  t_void start (t_err, P_params = nullptr);
+  t_void start (t_err, R_name, P_params = nullptr);
   t_void update(t_err, R_params);
   t_void fetch (t_err, r_params);
 

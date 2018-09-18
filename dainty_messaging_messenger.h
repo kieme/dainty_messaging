@@ -56,18 +56,21 @@ namespace messenger
   using message::x_message;
   using message::t_multiple_of_100ms;
 
-  using t_user       = message::t_messenger_user;
-  using p_user       = t_prefix<t_user>::p_;
-  using t_key        = message::t_messenger_key;
-  using R_key        = t_prefix<t_key>::R_;
-  using t_prio       = message::t_messenger_prio;
-  using t_name       = message::t_messenger_name;
-  using r_name       = t_prefix<t_name>::r_;
-  using R_name       = t_prefix<t_name>::R_;
-  using t_messages   = container::list::t_list<t_message>;
-  using r_messages   = t_prefix<t_messages>::r_;
-  using t_processor_ = mt::chained_queue::t_processor;
-  using x_processor_ = t_prefix<t_processor_>::x_;
+  using t_user             = message::t_messenger_user;
+  using p_user             = t_prefix<t_user>::p_;
+  using t_key              = message::t_messenger_key;
+  using R_key              = t_prefix<t_key>::R_;
+  using t_prio             = message::t_messenger_prio;
+  using t_name             = message::t_messenger_name;
+  using r_name             = t_prefix<t_name>::r_;
+  using R_name             = t_prefix<t_name>::R_;
+  using t_messages         = container::list::t_list<t_message>;
+  using r_messages         = t_prefix<t_messages>::r_;
+  using t_processor_       = mt::chained_queue::t_processor;
+  using t_client_          = mt::chained_queue::t_client;
+  using t_maybe_processor_ = t_maybe<t_processor_>;
+  using r_maybe_processor_ = t_prefix<t_maybe_processor_>::r_;
+  using x_maybe_processor_ = t_prefix<t_maybe_processor_>::x_;
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -231,12 +234,12 @@ namespace messenger
 
   private:
     friend t_messenger mk_();
-    friend t_messenger mk_(R_key, t_maybe<t_processor_>&&);
+    friend t_messenger mk_(R_key, x_maybe_processor_);
     t_messenger() = default;
-    t_messenger(R_key, t_maybe<t_processor_>&&);
+    t_messenger(R_key, x_maybe_processor_);
 
-    t_key                 id_ = t_key{0};
-    t_maybe<t_processor_> processor_;
+    t_key              id_ = t_key{0};
+    t_maybe_processor_ processor_;
   };
 
 ///////////////////////////////////////////////////////////////////////////////
