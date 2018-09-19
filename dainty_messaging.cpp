@@ -1172,8 +1172,9 @@ namespace message
 
   class t_data_ {
   public:
-    t_name   name;
-    t_params params;
+    t_name       name;
+    t_params     params;
+    t_prio_msgs_ msgs;
 
     t_data_(R_name _name, R_params _params) : name{_name}, params(_params) {
     }
@@ -1194,7 +1195,7 @@ namespace message
                                        key,
                                        member.second.prio,
                                        member.second.user);
-            msgs_.insert(t_prio_msgs_entry_{member.second.prio, std::move(msg)});
+            msgs.insert(t_prio_msgs_entry_{member.second.prio, std::move(msg)});
           } else {
             auto grp_ctxt{grp_ctxts_.get(key_params.id)};
             if (grp_ctxt && grp_ctxt->exist)
@@ -1217,7 +1218,7 @@ namespace message
                                    monitored.key,
                                    monitor.second.prio,
                                    monitor.second.user);
-        msgs_.insert(t_prio_msgs_entry_{monitor.second.prio, std::move(msg)});
+        msgs.insert(t_prio_msgs_entry_{monitor.second.prio, std::move(msg)});
       }
     }
 
@@ -1300,12 +1301,16 @@ namespace message
                                   R_messenger_name     group,
                                   t_messenger_prio     prio,
                                   t_messenger_user     user) {
-      /*
-      auto i{lookup_.find(name)};
-      if (i != lookup_.end()) {
-        messenger_grouplookup_t& glookup = ctxt_t::messenger_grouplookup();
-        std::pair<messenger_grouplookup_t::iterator, bool> j(
-          glookup.insert(messenger_grouplookup_t::value_type(name,
+      auto msgr = lookup_.find(name);
+      if (msgr != lookup_.end()) {
+        auto grp = lookup_.find(group);
+        if (grp != lookup_.end()) {
+          if (is_group(grp)) {
+          }
+        } else {
+        }
+
+          p.insert(messenger_grouplookup_t::value_type(name,
                            messenger_memberlist_t())));
         if (j.second)
           j.first->second.insert(messenger_memberlist_t::value_type(
@@ -1366,7 +1371,6 @@ namespace message
         else
           j.first->second.erase(*gn);
       }
-      */
       return false;
     }
 
@@ -1414,12 +1418,7 @@ namespace message
       return false;
     }
 
-    t_void forward_msgs() {
-      // msgs_; are now being sent
-    }
-
   private:
-    t_prio_msgs_        msgs_;
     t_msgr_ctxts_       msgr_ctxts_;
     t_grp_ctxts_        grp_ctxts_;
     t_lookup_           lookup_;
@@ -1434,7 +1433,7 @@ namespace message
                    public t_que_processor::t_logic,
                    public t_dispatcher::t_logic {
   public:
-    t_logic_(err::t_err& err, R_name name, R_params params)
+    t_logic_(err::r_err err, R_name name, R_params params)
       : data_         {name, params},
         cmd_processor_{err},
         que_processor_{err, data_.params.queuesize},
@@ -1468,7 +1467,9 @@ namespace message
         t_que_proxy_ que_proxy{err, ev_cmd_, que_processor_, *this};
         dispatcher_.add_event (err, {que_processor_.get_fd(), RD}, &que_proxy);
 
-        // timer
+        // timed messages
+        // fdtimer
+        // tipc topology service
         dispatcher_.event_loop(err, this);
       }
 
@@ -1500,7 +1501,7 @@ namespace message
 
     virtual t_quit notify_events_processed() override {
       printf("messaging: notify_events_processed\n");
-      data_.forward_msgs();
+      //data_.msgs
       return false;
     }
 
