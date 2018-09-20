@@ -143,13 +143,12 @@ namespace messenger
     t_name name;
     t_prio prio;
     t_user user;
-    t_key  key;
 
-    inline t_monitor() : prio{0}, user{0L}, key{0} {
+    inline t_monitor() : prio{0}, user{0L} {
     }
 
-    inline t_monitor(R_name _name, t_prio _prio, t_user _user, t_key _key)
-      : name{_name}, prio{_prio}, user{_user}, key{_key} {
+    inline t_monitor(R_name _name, t_prio _prio, t_user _user)
+      : name{_name}, prio{_prio}, user{_user} {
     }
   };
 

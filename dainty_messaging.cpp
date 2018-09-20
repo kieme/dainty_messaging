@@ -139,7 +139,11 @@ namespace messaging
 
 ////////////////////////////////////////////////////////////////////////////////
 
-  //XXX not correct
+  // 64              bit offset                 0
+  // --------------------------------------------
+  // | remote(32) | seq(16) | id(15) | group(1) |
+  // --------------------------------------------
+
   struct t_messenger_key_params {
     t_bool    group = false;
     t_bool    local = false;
@@ -154,19 +158,17 @@ namespace messaging
   };
 
   inline t_messenger_key make_key(t_uint16 seq, t_ctxt_id id) {
-    return t_messenger_key(((t_messenger_key_)get(id)  << 1) |
-                           ((t_messenger_key_)seq << 16));
+    return t_messenger_key{((t_messenger_key_)get(id) << 1) |
+                           ((t_messenger_key_)seq << 16)};
   }
 
   inline t_messenger_key make_group_key(t_uint16 seq, t_ctxt_id id) {
-    return t_messenger_key(get(make_key(seq, id)) | 1);
+    return t_messenger_key{get(make_key(seq, id)) | 1};
   }
 
-  inline t_messenger_key make_remote_key(t_uint16 remote_seq,
-                                         t_ctxt_id remote_id,
+  inline t_messenger_key make_remote_key(//xxxx,
                                          R_messenger_key key) {
-    return t_messenger_key(((t_messenger_key_)get(remote_id)  << 32) |
-                           ((t_messenger_key_)remote_seq << 48) | get(key));
+    return t_messenger_key{get(key) /* | use upper 32 bits xxxx */};
   }
 
   inline t_bool is_remote(R_messenger_key key) {
@@ -181,10 +183,14 @@ namespace messaging
     return get(key) & 1;
   }
 
+  inline t_bool is_messenger(R_messenger_key key) {
+    return !is_group(key);
+  }
+
   inline t_messenger_key_params get_key_params(R_messenger_key key) {
-    return t_messenger_key_params(is_group(key), is_local(key),
-                                  t_ctxt_id{0xff & (get(key) >> 32)},
-                                  (t_uint16)(0xff & (get(key) >> 48)));
+    return {is_group(key), is_local(key),
+            t_ctxt_id {0xef & (get(key) >> 1)},
+            (t_uint16)(0xff & (get(key) >> 16))};
   }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -1261,7 +1267,8 @@ namespace message
           update_new_messenger(*r);
           //cmd - XXX return end
           return;
-        }
+        } else
+          err = err::E_XXX;
         lookup_.erase(p.first);
         processor.release();
       } else
