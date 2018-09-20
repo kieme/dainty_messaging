@@ -1118,19 +1118,19 @@ namespace message
   using r_msgr_ctxt_  = t_prefix<t_msgr_ctxt_>::r_;
   using t_msgr_ctxts_ = t_freelist<t_msgr_ctxt_, 300>;
 
-  struct t_grp_ {
+  struct t_grp_member_ {
     t_messenger_password password;
     t_messenger_key      key;
     t_messenger_prio     prio;
     t_messenger_user     user;
 
-    t_grp_(R_messenger_password _password, R_messenger_key _key,
-           t_messenger_prio _prio, t_messenger_user _user)
+    t_grp_member_(R_messenger_password _password, R_messenger_key _key,
+                  t_messenger_prio _prio, t_messenger_user _user)
       : password{_password}, key{_key}, prio{_prio}, user{_user} {
     }
   };
-  using t_grp_lookup_       = std::map<t_messenger_name, t_grp_>;
-  using t_grp_lookup_entry_ = t_grp_lookup_::value_type;
+  using t_grp_member_lookup_ = std::map<t_messenger_name, t_grp_member_>;
+  using t_grp_member_lookup_entry_ = t_grp_member_lookup_::value_type;
 
   struct t_grp_ctxt_ {
     t_bool                 exist = {false};
@@ -1138,34 +1138,36 @@ namespace message
     t_messenger_visibility visibility;
     t_messenger_name       name;
     t_password             password;
-    t_grp_lookup_          members;
+    t_grp_member_lookup_   members;
   };
   using R_grp_ctxt_  = t_prefix<t_grp_ctxt_>::R_;
   using t_grp_ctxts_ = t_freelist<t_grp_ctxt_, 2000>;
 
-  struct t_monitor_ {
+  struct t_monitored_by_ {
     t_messenger_key  key;
     t_messenger_prio prio;
     t_messenger_user user;
 
-    t_monitor_(R_messenger_key _key, t_messenger_prio _prio,
-               t_messenger_user _user) : key{_key}, prio{_prio}, user{_user} {
+    t_monitored_by_(R_messenger_key _key, t_messenger_prio _prio,
+                    t_messenger_user _user)
+      : key{_key}, prio{_prio}, user{_user} {
     }
   };
-  using t_monitor_lookup_       = std::map<t_messenger_name, t_monitor_>;
-  using t_monitor_lookup_entry_ = t_monitor_lookup_::value_type;
+  using t_monitored_by_lookup_ = std::map<t_messenger_name, t_monitored_by_>;
+  using t_monitored_by_lookup_entry_ = t_monitored_by_lookup_::value_type;
 
   struct t_monitored_ {
-    t_messenger_state  state = message::STATE_UNAVAILABLE;
-    t_messenger_key    key   = t_messenger_key{0};
-    t_monitor_lookup_  by;
+    t_messenger_state      state = message::STATE_UNAVAILABLE;
+    t_messenger_key        key   = t_messenger_key{0};
+    t_monitored_by_lookup_ by;
 
     t_monitored_(R_messenger_key _key) : key{_key} {
     }
   };
   using R_monitored_ = t_prefix<t_monitored_>::R_;
   using r_monitored_ = t_prefix<t_monitored_>::r_;
-  using t_monitored_lookup_      = std::map<t_messenger_name, t_monitored_>;
+
+  using t_monitored_lookup_ = std::map<t_messenger_name, t_monitored_>;
   using t_monitored_lookup_entry = t_monitored_lookup_::value_type;
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -1301,6 +1303,7 @@ namespace message
                                   R_messenger_name     group,
                                   t_messenger_prio     prio,
                                   t_messenger_user     user) {
+    /*
       auto msgr = lookup_.find(name);
       if (msgr != lookup_.end()) {
         auto grp = lookup_.find(group);
@@ -1371,6 +1374,7 @@ namespace message
         else
           j.first->second.erase(*gn);
       }
+      */
       return false;
     }
 
