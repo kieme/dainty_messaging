@@ -567,7 +567,7 @@ namespace message
 ///////////////////////////////////////////////////////////////////////////////
 
   t_bool write_fail_msg_(r_message                msg,
-                         t_fail_message::t_reason reason,
+                         t_fail_message::t_reason, //XXX - must write it
                          R_messenger_key          key,
                          R_message                fail_msg) {
     const t_n_ max = sizeof(t_hdr_) + get(fail_msg.get_capacity());
@@ -650,7 +650,7 @@ namespace message
   };
   using R_item_ = t_prefix<t_item_>::R_;
 
-  inline t_bool operator==(R_item_ lh, R_item_ rh) { return false; }
+  inline t_bool operator==(R_item_, R_item_) { return false; }
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -817,7 +817,7 @@ namespace message
                                        R_messenger_name _group,
                                        p_messenger_user _user)
       : t_cmd{cmd_id}, password{_password}, name{_name}, group{_group},
-        user{user} {
+        user{_user} {
     }
   };
   using r_remove_messenger_from_group_cmd_ =
@@ -834,7 +834,7 @@ namespace message
     t_is_messenger_in_group_cmd_(R_messenger_name _name,
                                  R_messenger_name _group,
                                  p_messenger_user _user)
-      : t_cmd{cmd_id}, name{_name}, group{_group}, user{user} {
+      : t_cmd{cmd_id}, name{_name}, group{_group}, user{_user} {
     }
   };
   using r_is_messenger_in_group_cmd_ =
@@ -1459,11 +1459,11 @@ namespace message
       return que_processor_.make_client(waitable_chained_queue::t_user{0L});
     }
 
-    virtual t_void update(t_thd_err err, r_pthread_attr) noexcept override {
+    virtual t_void update(t_thd_err, r_pthread_attr) noexcept override {
       printf("messaging: update\n");
     }
 
-    virtual t_void prepare(t_thd_err err) noexcept override {
+    virtual t_void prepare(t_thd_err) noexcept override {
       printf("messaging: prepare\n");
     }
 
@@ -1492,7 +1492,7 @@ namespace message
       return nullptr;
     }
 
-    virtual t_void may_reorder_events (r_event_infos infos) override {
+    virtual t_void may_reorder_events (r_event_infos) override {
       printf("messaging: may_reorder_events\n");
     }
 
@@ -1517,7 +1517,8 @@ namespace message
     }
 
     t_void process_item(waitable_chained_queue::t_entry& entry) {
-      auto& item = entry.any.ref<t_item_>();
+      t_any any{std::move(entry.any)}; // took the data
+      auto& item = any.ref<t_item_>();
     }
 
     t_void process_chain(t_chain& chain) { //XXX
@@ -1530,16 +1531,16 @@ namespace message
       process_chain(chain);
     }
 
-    virtual t_void async_process(t_user, p_command cmd) noexcept override {
+    virtual t_void async_process(t_user, p_command) noexcept override {
       printf("messaging: p_command\n");
     }
 
-    t_void process(err::t_err err, r_update_params_cmd_ cmd) noexcept {
+    t_void process(err::t_err, r_update_params_cmd_) noexcept {
       printf("messaging: r_update_params_cmd_\n");
       //XXX-1
     }
 
-    t_void process(err::t_err err, r_fetch_params_cmd_ cmd) noexcept {
+    t_void process(err::t_err, r_fetch_params_cmd_) noexcept {
       printf("messaging: r_fetch_params_cmd_\n");
       //XXX-2
     }
@@ -1549,144 +1550,143 @@ namespace message
       data_.add_messenger(err, cmd.id, cmd.processor, cmd.name, cmd.params);
     }
 
-    t_void process(err::t_err err, r_destroy_messenger_cmd_ cmd) noexcept {
+    t_void process(err::t_err, r_destroy_messenger_cmd_) noexcept {
       printf("messaging: r_destroy_messenger_cmd_\n");
       //data_.del_messenger(err, cmd);
       //XXX-4
     }
 
-    t_void process(err::t_err err, r_is_messenger_cmd_ cmd) noexcept {
+    t_void process(err::t_err, r_is_messenger_cmd_) noexcept {
       printf("messaging: r_is_messenger_cmd_\n");
       //XXX-5
     }
 
-    t_void process(err::t_err err, r_is_messenger_info_cmd_ cmd) noexcept {
+    t_void process(err::t_err, r_is_messenger_info_cmd_) noexcept {
       printf("messaging: r_is_messenger_info_cmd_\n");
       //XXX-6
     }
 
-    t_void process(err::t_err err, r_fetch_messengers_cmd_ cmd) noexcept {
+    t_void process(err::t_err, r_fetch_messengers_cmd_) noexcept {
       printf("messaging: r_fetch_messengers_cmd_\n");
       //XXX-7
     }
 
-    t_void process(err::t_err err, r_create_group_cmd_ cmd) noexcept {
+    t_void process(err::t_err, r_create_group_cmd_) noexcept {
       printf("messaging: r_create_group_cmd_\n");
       //XXX-8
     }
 
-    t_void process(err::t_err err, r_destroy_group_cmd_ cmd) noexcept {
+    t_void process(err::t_err, r_destroy_group_cmd_) noexcept {
       printf("messaging: r_destroy_group_cmd_\n");
       //XXX-9
     }
 
-    t_void process(err::t_err err, r_is_group_cmd_ cmd) noexcept {
+    t_void process(err::t_err, r_is_group_cmd_) noexcept {
       printf("messaging: r_is_group_cmd_\n");
       //XXX-10
     }
 
-    t_void process(err::t_err err, r_add_messenger_to_group_cmd_ cmd) noexcept {
+    t_void process(err::t_err, r_add_messenger_to_group_cmd_) noexcept {
       printf("messaging: r_add_messenger_to_group_cmd_\n");
       //XXX-11
     }
 
-    t_void process(err::t_err err,
-                   r_remove_messenger_from_group_cmd_ cmd) noexcept {
+    t_void process(err::t_err, r_remove_messenger_from_group_cmd_) noexcept {
       printf("messaging: r_remove_messenger_from_group_cmd_\n");
       //XXX-12
     }
 
-    t_void process(err::t_err err, r_is_messenger_in_group_cmd_ cmd) noexcept {
+    t_void process(err::t_err, r_is_messenger_in_group_cmd_) noexcept {
       printf("messaging: r_is_messenger_in_group_cmd_\n");
       //XXX-13
     }
 
-    t_void process(err::t_err err, r_fetch_messenger_groups_cmd_ cmd) noexcept {
+    t_void process(err::t_err, r_fetch_messenger_groups_cmd_) noexcept {
       printf("messaging: r_fetch_messenger_groups_cmd_\n");
       //XXX-14
     }
 
-    t_void process(err::t_err err, r_who_is_cmd_ cmd) noexcept {
+    t_void process(err::t_err, r_who_is_cmd_) noexcept {
       printf("messaging: r_who_is_cmd_\n");
       //XXX-15
     }
 
-    t_void process(err::t_err err, r_get_name_cmd_ cmd) noexcept {
+    t_void process(err::t_err, r_get_name_cmd_) noexcept {
       printf("messaging: r_get_name_cmd_\n");
       //XXX-16
     }
 
-    t_void process(err::t_err err, r_get_params_cmd_ cmd) noexcept {
+    t_void process(err::t_err, r_get_params_cmd_) noexcept {
       printf("messaging: r_get_params_cmd_\n");
       //XXX-17
     }
 
-    t_void process(err::t_err err, r_update_visibility_cmd_ cmd) noexcept {
+    t_void process(err::t_err, r_update_visibility_cmd_) noexcept {
       printf("messaging: r_update_visibility_cmd_\n");
       //XXX-18
     }
 
-    t_void process(err::t_err err, r_update_alive_period_cmd_ cmd) noexcept {
+    t_void process(err::t_err, r_update_alive_period_cmd_) noexcept {
       printf("messaging: r_update_alive_period_cmd_\n");
       //XXX-19
     }
 
-    t_void process(err::t_err err, r_start_timer_cmd_ cmd) noexcept {
+    t_void process(err::t_err, r_start_timer_cmd_) noexcept {
       printf("messaging: r_start_timer_cmd_\n");
       //XXX-20
     }
 
-    t_void process(err::t_err err, r_stop_timer_cmd_ cmd) noexcept {
+    t_void process(err::t_err, r_stop_timer_cmd_) noexcept {
       printf("messaging: r_stop_timer_cmd_\n");
       //XXX-21
     }
 
-    t_void process(err::t_err err, r_query_timer_cmd_ cmd) noexcept {
+    t_void process(err::t_err, r_query_timer_cmd_) noexcept {
       printf("messaging: r_query_timer_cmd_\n");
       //XXX-22
     }
 
-    t_void process(err::t_err err, r_add_to_group_cmd_ cmd) noexcept {
+    t_void process(err::t_err, r_add_to_group_cmd_) noexcept {
       printf("messaging: r_add_to_group_cmd_\n");
       //XXX-23
     }
 
-    t_void process(err::t_err err, r_remove_from_group_cmd_ cmd) noexcept {
+    t_void process(err::t_err, r_remove_from_group_cmd_) noexcept {
       printf("messaging: r_remove_from_group_cmd_\n");
       //XXX-24
     }
 
-    t_void process(err::t_err err, r_is_in_group_cmd_ cmd) noexcept {
+    t_void process(err::t_err, r_is_in_group_cmd_) noexcept {
       printf("messaging: r_is_in_group_cmd_\n");
       //XXX-25
     }
 
-    t_void process(err::t_err err, r_get_groups_cmd_ cmd) noexcept {
+    t_void process(err::t_err, r_get_groups_cmd_) noexcept {
       printf("messaging: r_get_groups_cmd_\n");
       //XXX-26
     }
 
-    t_void process(err::t_err err, r_add_monitor_cmd_ cmd) noexcept {
+    t_void process(err::t_err, r_add_monitor_cmd_) noexcept {
       printf("messaging: r_add_monitor_cmd_\n");
       //XXX-27
     }
 
-    t_void process(err::t_err err, r_remove_monitor_cmd_ cmd) noexcept {
+    t_void process(err::t_err, r_remove_monitor_cmd_) noexcept {
       printf("messaging: r_remove_monitor_cmd_\n");
       //XXX-28
     }
 
-    t_void process(err::t_err err, r_is_monitored_cmd_ cmd) noexcept {
+    t_void process(err::t_err, r_is_monitored_cmd_) noexcept {
       printf("messaging: r_is_monitored_cmd_\n");
       //XXX-29
     }
 
-    t_void process(err::t_err err, r_get_monitored_cmd_ cmd) noexcept {
+    t_void process(err::t_err, r_get_monitored_cmd_) noexcept {
       printf("messaging: r_get_monitored_cmd_\n");
       //XXX-30
     }
 
-    t_void process(err::t_err err, r_clean_death_cmd_ cmd) noexcept {
+    t_void process(err::t_err, r_clean_death_cmd_) noexcept {
       printf("messaging: r_clean_death_cmd_\n");
       ev_cmd_ = QUIT_EVENT_LOOP;
     }
@@ -1809,7 +1809,7 @@ namespace message
         return {"cmd logic"};
       }
 
-      virtual t_action notify_event(r_event_params params) override {
+      virtual t_action notify_event(r_event_params) override { //XXX - args?
         ev_cmd_ = CONTINUE;
         processor_.process(err_, logic_);
         return ev_cmd_;
@@ -1833,7 +1833,7 @@ namespace message
         return {"queue logic"};
       }
 
-      virtual t_action notify_event(r_event_params params) override {
+      virtual t_action notify_event(r_event_params)  override { //XXX - args?
         ev_cmd_ = CONTINUE;
         processor_.process_available(err_, logic_);
         return ev_cmd_;
