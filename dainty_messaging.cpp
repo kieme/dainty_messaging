@@ -902,13 +902,13 @@ namespace message
     constexpr static command::t_id cmd_id = 15;
     R_messenger_key  key;
     r_messenger_name name;
-    t_bool*          group;
-    t_bool*          local;
+    p_bool           group;
+    p_bool           local;
     t_bool           found = false;
 
     inline
     t_who_is_cmd_(R_messenger_key _key, r_messenger_name _name,
-                  t_bool* _group, t_bool* _local)
+                  p_bool _group, p_bool _local)
       : t_cmd{cmd_id}, key{_key}, name{_name}, group{_group}, local{_local} {
     }
   };
@@ -2018,7 +2018,7 @@ namespace messenger
     }
 
     t_bool who_is(r_err err, R_messenger_key key, r_messenger_name name,
-                             t_bool* group, t_bool* local) {
+                             p_bool group, p_bool local) {
       t_who_is_cmd_ cmd{key, name, group, local};
       cmd_client_.request(err, cmd);
       return cmd.found;
@@ -2550,7 +2550,7 @@ namespace messenger
   }
 
   t_bool who_is(t_err err, R_messenger_key key, r_messenger_name name,
-                t_bool* group, t_bool* local) {
+                p_bool group, p_bool local) {
     ERR_GUARD(err) {
       if (mr_)
         return mr_->who_is(err, key, name, group, local);

@@ -35,6 +35,7 @@ namespace dainty
 namespace messaging
 {
   using named::t_bool;
+  using named::p_bool;
   using named::t_void;
   using named::t_n_;
   using named::t_n;
@@ -214,7 +215,7 @@ namespace messaging
 ///////////////////////////////////////////////////////////////////////////////
 
   t_bool who_is(t_err, R_messenger_key, r_messenger_name,
-                       t_bool* group = nullptr, t_bool* local = nullptr);
+                       p_bool group = nullptr, p_bool local = nullptr);
 
 ///////////////////////////////////////////////////////////////////////////////
 }
