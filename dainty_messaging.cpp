@@ -191,9 +191,16 @@ namespace messaging
     return !is_group(key);
   }
 
+  inline t_ctxt_id get_ctxt_id(R_messenger_key key) {
+    return t_ctxt_id{0x7fff & (get(key) >> 1)};
+  }
+
+  inline t_bool is_valid(R_messenger_key key) {
+    return get(key);
+  }
+
   inline t_messenger_key_params get_key_params(R_messenger_key key) {
-    return {is_group(key), is_local(key),
-            t_ctxt_id {0xef & (get(key) >> 1)},
+    return {is_group(key), is_local(key), get_ctxt_id(key),
             (t_uint16)(0xff & (get(key) >> 16))};
   }
 
@@ -1134,11 +1141,11 @@ namespace message
 
 ///////////////////////////////////////////////////////////////////////////////
 
-  using t_prio_msgs_       = std::multimap<t_messenger_prio, t_message>;
-  using r_prio_msgs_       = t_prefix<t_prio_msgs_>::r_;
-  using t_prio_msgs_entry_ = t_prio_msgs_::value_type;
-  using t_lookup_          = std::map<t_messenger_name, t_messenger_key>;
-  using t_lookup_entry_    = t_lookup_::value_type;
+  using t_msgs_         = std::multimap<t_messenger_prio, t_message>;
+  using r_msgs_         = t_prefix<t_msgs_>::r_;
+  using t_msgs_entry_   = t_msgs_::value_type;
+  using t_lookup_       = std::map<t_messenger_name, t_messenger_key>;
+  using t_lookup_entry_ = t_lookup_::value_type;
 
   struct t_tmr_ {
     t_messenger_timer_params params;
@@ -1190,6 +1197,7 @@ namespace message
     t_password             password;
     t_grp_member_lookup_   members;
   };
+  using p_grp_ctxt_  = t_prefix<t_grp_ctxt_>::p_;
   using R_grp_ctxt_  = t_prefix<t_grp_ctxt_>::R_;
   using t_grp_ctxts_ = t_freelist<t_grp_ctxt_, 2000>;
 
@@ -1226,15 +1234,15 @@ namespace message
   public:
     t_name       name;
     t_params     params;
-    t_prio_msgs_ msgs;
 
     t_data_(R_name _name, R_params _params) : name{_name}, params(_params) {
     }
 
-    t_void update_prio_msgs(R_messenger_name  name,
-                            t_messenger_state state,
-                            R_messenger_key   key,
-                            R_grp_ctxt_       grp) {
+    t_void update_msgs(r_msgs_           msgs,
+                       R_messenger_name  name,
+                       t_messenger_state state,
+                       R_messenger_key   key,
+                       R_grp_ctxt_       grp) {
       for (auto& member : grp.members) {
         auto key_params{get_key_params(member.second.key)};
         if (key_params.local) {
@@ -1247,11 +1255,11 @@ namespace message
                                        key,
                                        member.second.prio,
                                        member.second.user);
-            msgs.insert(t_prio_msgs_entry_{member.second.prio, std::move(msg)});
+            msgs.insert(t_msgs_entry_{member.second.prio, std::move(msg)});
           } else {
             auto grp_ctxt{grp_ctxts_.get(key_params.id)};
             if (grp_ctxt && grp_ctxt->exist)
-              update_prio_msgs(name, state, key, *grp_ctxt);
+              update_msgs(msgs, name, state, key, *grp_ctxt);
           }
         } else {
            // remote ctxt - table per remote connection.
@@ -1259,8 +1267,9 @@ namespace message
       }
     }
 
-    t_void update_prio_msgs(R_messenger_name name,
-                            R_monitored_     monitored) {
+    t_void update_msgs(r_msgs_          msgs,
+                       R_messenger_name name,
+                       R_monitored_     monitored) {
       for (auto& monitor : monitored.by) {
         message::t_notify_message msg;
         message::write_notify_msg_(msg,
@@ -1270,27 +1279,12 @@ namespace message
                                    monitored.key,
                                    monitor.second.prio,
                                    monitor.second.user);
-        msgs.insert(t_prio_msgs_entry_{monitor.second.prio, std::move(msg)});
-      }
-    }
-
-    t_void update_new_messenger(r_msgr_ctxt_ ctxt) {
-      auto m = monitored_.find(ctxt.info.name);
-      if (m != monitored_.end()) {
-        m->second.key   = ctxt.info.key;
-        m->second.state = message::STATE_AVAILABLE;
-        update_prio_msgs(m->first, m->second);
-      }
-      if (get(ctxt.info.params.timer_params.factor.value)) {
-        auto& params = ctxt.info.params.timer_params;
-        auto& tmr  = timers_[ctxt.info.key];
-        tmr.params = params;
-        tmr.cnt    = t_multiple_of_100ms{0};
-        tmr.start  = t_time(); // timestamp
+        msgs.insert(t_msgs_entry_{monitor.second.prio, std::move(msg)});
       }
     }
 
     t_void add_messenger(err::r_err                  err,
+                         r_msgs_                     msgs,
                          r_messenger_key             id,
                          r_maybe_messenger_processor processor,
                          R_messenger_name            name,
@@ -1301,14 +1295,26 @@ namespace message
         mt::chained_queue::t_user user{0L};
         auto r = msgr_ctxts_.insert(err, set(processor).make_client(err, user));
         if (r) {
-          auto& info = r->info;
-          id = make_key(0, r.id);
-          info.key    = p.first->second = id;
-          info.name   = name;
-          info.params.visibility   = params.visibility;
-          info.params.alive_factor = params.alive_factor;
-          info.params.timer_params = params.timer_params;
-          update_new_messenger(*r);
+          auto& ctxt = *r;
+          id = make_key(0/* sequence - XXX */, r.id);
+          ctxt.info.key    = p.first->second = id;
+          ctxt.info.name   = name;
+          ctxt.info.params.visibility   = params.visibility;
+          ctxt.info.params.alive_factor = params.alive_factor;
+          ctxt.info.params.timer_params = params.timer_params;
+
+          auto m = monitored_.find(ctxt.info.name);
+          if (m != monitored_.end()) {
+            m->second.key   = ctxt.info.key;
+            m->second.state = message::STATE_AVAILABLE;
+            update_msgs(msgs, m->first, m->second);
+          }
+          if (get(ctxt.info.params.timer_params.factor.value)) { // start timer
+            auto& tmr  = timers_[ctxt.info.key];
+            tmr.params = ctxt.info.params.timer_params;
+            tmr.cnt    = t_multiple_of_100ms{0};
+            tmr.start  = t_time(); // timestamp
+          }
           //cmd - XXX return end
           return;
         } else
@@ -1319,7 +1325,7 @@ namespace message
         err = err::E_XXX;
     }
 
-    t_void remove_messenger(r_msgr_ctxt_ ctxt) {
+    t_void remove_messenger(r_msgs_ msgs, r_msgr_ctxt_ ctxt) {
       for (auto& monitor : ctxt.info.params.monitor_list) {
         auto m = monitored_.find(monitor.first);
         r_monitored_ entry = m->second;
@@ -1328,16 +1334,16 @@ namespace message
           monitored_.erase(m);
       }
 
-      /*
-      messenger_memberlist_t& groups = ctxt.info_.params_.groups_;
-      for (messenger_memberlist_t::iterator i = groups.begin();
-          i != groups.end(); ++i)
-         process_remove_messenger_from_group(i->second.password_,
-                                             ctxt.info_.name_,
-                                             i->first, 0);
-      */
-      //process_remove_messenger_from_groups(ctxt.info_.name_);
-      //xxx
+      for (auto& group : ctxt.info.params.group_list) {
+        auto g     = lookup_.find(group.first);
+        auto gid   = get_ctxt_id(g->second);
+        auto gctxt = grp_ctxts_.get(gid);
+        gctxt->members.erase(ctxt.info.name);
+        if (gctxt->members.empty() && !is_valid(gctxt->key)) {
+          grp_ctxts_.erase(gid);
+          lookup_.erase(g);
+        }
+      }
 
       timers_.erase(ctxt.info.key);
 
@@ -1345,7 +1351,7 @@ namespace message
       if (m != monitored_.end()) {
         set(m->second.key) = 0;
         m->second.state = message::STATE_UNAVAILABLE;
-        update_prio_msgs(m->first, m->second);
+        update_msgs(msgs, m->first, m->second);
       }
     }
 
@@ -1354,78 +1360,6 @@ namespace message
                                   R_messenger_name     group,
                                   t_messenger_prio     prio,
                                   t_messenger_user     user) {
-    /*
-      auto msgr = lookup_.find(name);
-      if (msgr != lookup_.end()) {
-        auto grp = lookup_.find(group);
-        if (grp != lookup_.end()) {
-          if (is_group(grp)) {
-          }
-        } else {
-        }
-
-          p.insert(messenger_grouplookup_t::value_type(name,
-                           messenger_memberlist_t())));
-        if (j.second)
-          j.first->second.insert(messenger_memberlist_t::value_type(
-                                   *gn, messenger_member_t(password, prio,
-                                                           user)));
-        else if (j.first != glookup.end()) {
-          messenger_memberlist_t& members = j.first->second;
-          std::pair<messenger_memberlist_t::iterator, bool> k(
-            members.insert(messenger_memberlist_t::value_type(
-              *gn, messenger_member_t(password, prio, user))));
-          if (!k.second && k.first != members.end())
-            return false;
-        } else
-          return false;
-
-        messenger_lookup_t::value_type tmp(*gn, messenger_key_t(0));
-        std::pair<messenger_lookup_t::iterator, bool> p(
-          ctxt_t::messenger_lookup().insert(tmp));
-        if (p.second) {
-          messengergroup_freelist_t::result_t r(
-            ctxt_t::messengergroup_list().insert());
-          if (r) {
-            p.first->second = make_group_key(++ctxt_t::grpseq(),
-                                             get(r.id_));
-            messenger_groupinfo_t* info = r.ptr_;
-            info->name_  = *gn;
-            info->key_   = p.first->second;
-            info->exist_ = false;
-            memberlist_t::value_type tmp(
-              i->first, member_t(password, i->second, prio, user));
-            info->members_.insert(tmp);
-            return true;
-          }
-          ctxt_t::messenger_lookup().erase(p.first);
-        } else if (p.first != ctxt_t::messenger_lookup().end()) {
-          bool_t local = false, group = false;
-          ushort_t seq = 0, id = 0;
-          if (get_key_params(p.first->second, local, group, seq, id) &&
-              local && group) {
-            messenger_groupinfo_t* info = ctxt_t::messengergroup_list()
-              .get(nfreelist_id_t(id));
-            if (info) {
-              memberlist_t::value_type
-                tmp(i->first, member_t(password, i->second, prio, user));
-              if (info->members_.insert(tmp).second) {
-                if (info->exist_) {
-                  update_prio_messages(prio_messages, *gn,
-                                       messenger_state_available,
-                                       info->key_, *info);
-                }
-                return true;
-              }
-            }
-          }
-        }
-        if (j.first->second.size() == 1)
-          glookup.erase(j.first);
-        else
-          j.first->second.erase(*gn);
-      }
-      */
       return false;
     }
 
@@ -1433,43 +1367,6 @@ namespace message
                                        R_messenger_name     name,
                                        R_messenger_name     group,
                                        p_messenger_user     user) {
-      /*
-      messenger_lookup_t& lookup = ctxt_t::messenger_lookup();
-      messenger_lookup_t::iterator i(lookup.find(*gn));
-      if (i != lookup.end()) {
-        bool_t local = false, group = false;
-        ushort_t seq = 0, id = 0;
-        if (get_key_params(i->second, local, group, seq, id) &&
-            local && group) {
-          messenger_groupinfo_t* info = ctxt_t::messengergroup_list()
-            .get(nfreelist_id_t(id));
-          if (info) {
-            memberlist_t& list = info->members_;
-            memberlist_t::iterator j(list.find(name));
-            if (j != list.end()) {
-              if (j->second.password_ == password) {
-                if (user)
-                  *user = j->second.user_;
-                list.erase(j);
-                if (list.empty() && !info->exist_) {
-                  ctxt_t::messengergroup_list().erase(nfreelist_id_t(id));
-                  lookup.erase(i);
-                }
-
-                messenger_grouplookup_t& glookup =
-                  ctxt_t::messenger_grouplookup();
-                messenger_grouplookup_t::iterator k(glookup.find(name));
-                if (k->second.size() == 1)
-                  glookup.erase(k);
-                else
-                  k->second.erase(*gn);
-                return true;
-              }
-            }
-          }
-        }
-      }
-      */
       return false;
     }
 
@@ -1556,7 +1453,7 @@ namespace message
 
     virtual t_quit notify_events_processed() override {
       printf("messaging: notify_events_processed\n");
-      //data_.msgs - msgs should not be part of data.
+      //msgs - msgs should not be part of data.
       return false;
     }
 
@@ -1591,7 +1488,8 @@ namespace message
 
     t_void process(err::t_err err, r_make_messenger_cmd_ cmd) noexcept {
       printf("messaging: r_make_messenger_cmd_\n");
-      data_.add_messenger(err, cmd.id, cmd.processor, cmd.name, cmd.params);
+      data_.add_messenger(err, msgs_, cmd.id, cmd.processor, cmd.name,
+                          cmd.params);
     }
 
     t_void process(err::t_err, r_destroy_messenger_cmd_) noexcept {
@@ -1890,6 +1788,7 @@ namespace message
       r_que_processor_logic logic_;
     };
 
+    t_msgs_         msgs_;
     t_event_cmd     ev_cmd_;
     t_data_         data_;
     t_cmd_processor cmd_processor_;
