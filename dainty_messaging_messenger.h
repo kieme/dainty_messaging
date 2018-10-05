@@ -161,27 +161,29 @@ namespace messenger
 
   class t_params {
   public:
-    // queue size
     t_scope             scope;
+    t_n                 queuesize;
     t_multiple_of_100ms alive_factor;
     t_timer_params      timer_params;
     t_group_list        group_list;
     t_monitor_list      monitor_list;
 
     inline t_params(t_scope             _scope        = SCOPE_PROCESS,
-                    t_multiple_of_100ms _alive_factor = t_multiple_of_100ms(0),
+                    t_n                 _queuesize    = t_n{50},
+                    t_multiple_of_100ms _alive_factor = t_multiple_of_100ms{0},
                     R_timer_params      _timer_params = t_timer_params())
-      : scope(_scope), alive_factor(_alive_factor),
-        timer_params(_timer_params) {
+      : scope{_scope}, queuesize{_queuesize}, alive_factor{_alive_factor},
+        timer_params{_timer_params} {
     }
 
     inline t_params(t_scope             _scope,
+                    t_n                 _queuesize,
                     t_multiple_of_100ms _alive_factor,
                     R_timer_params      _timer_params,
                     R_group_list        _group_list,
                     R_monitor_list      _monitor_list)
-      : scope(_scope), alive_factor(_alive_factor),
-        timer_params(_timer_params), group_list(_group_list),
+      : scope{_scope}, queuesize{_queuesize}, alive_factor{_alive_factor},
+        timer_params{_timer_params}, group_list(_group_list),
         monitor_list(_monitor_list) {
     }
   };
