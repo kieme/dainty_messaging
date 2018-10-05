@@ -1187,7 +1187,6 @@ namespace message
   using t_grp_member_lookup_entry_ = t_grp_member_lookup_::value_type;
 
   struct t_grp_ctxt_ {
-    t_bool               exist = {false};
     t_messenger_key      key   = t_messenger_key{0};
     t_messenger_scope    scope;
     t_messenger_name     name;
@@ -1255,7 +1254,7 @@ namespace message
             msgs.insert(t_msgs_entry_{member.second.prio, std::move(msg)});
           } else {
             auto grp_ctxt{grp_ctxts_.get(key_params.id)};
-            if (grp_ctxt && grp_ctxt->exist)
+            if (grp_ctxt && is_valid(grp_ctxt->key))
               update_msgs(msgs, name, state, key, *grp_ctxt);
           }
         } else {
@@ -1393,10 +1392,30 @@ namespace message
 
     t_void create_group(err::t_err err, r_msgs_ msgs, R_password password,
                         R_messenger_name name, t_messenger_scope scope) {
+      p_grp_ctxt_ gctxt = nullptr;
       auto m = lookup_.find(name); // insert.
       if (m == lookup_.end()) {
-      } else
-        err = err::E_XXX;
+        // lookup_.insert();
+        // grp_ctxts_.insert();
+        // make group key
+      } else {
+        auto& key = m->second;
+        if (is_group(key) && is_local(key)) {
+          gctxt = grp_ctxts_.get(get_ctxt_id(key));
+          if (is_valid(gctxt->key))
+            err = err::E_XXX;
+        } else
+          err = err::E_XXX;
+      }
+
+      if (!err && gctxt) {
+        gctxt->key = m->second;
+        // msgs
+      }
+    }
+
+    t_void destroy_group(err::t_err err, r_msgs_ msgs, R_password password,
+                        R_messenger_name name) {
     }
 
     t_bool add_messenger_to_group(R_messenger_password password,
@@ -1566,9 +1585,9 @@ namespace message
       data_.create_group(err, msgs_, cmd.password, cmd.name, cmd.scope);
     }
 
-    t_void process(err::t_err, r_destroy_group_cmd_) noexcept {
+    t_void process(err::t_err err, r_destroy_group_cmd_ cmd) noexcept {
       printf("messaging: r_destroy_group_cmd_\n");
-      //XXX-9
+      data_.destroy_group(err, msgs_, cmd.password, cmd.name);
     }
 
     t_void process(err::t_err, r_is_group_cmd_) noexcept {
