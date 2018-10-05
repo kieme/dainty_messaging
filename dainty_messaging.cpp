@@ -792,16 +792,15 @@ namespace message
 
   struct t_create_group_cmd_ : t_cmd {
     constexpr static command::t_id cmd_id = 8;
-    R_password             password;
-    R_messenger_name       name;
-    t_messenger_visibility visibility;
+    R_password        password;
+    R_messenger_name  name;
+    t_messenger_scope scope;
 
     inline
-    t_create_group_cmd_(R_password             _password,
-                        R_messenger_name       _name,
-                        t_messenger_visibility _visibility)
-      : t_cmd{cmd_id}, password{_password}, name{_name},
-        visibility{_visibility} {
+    t_create_group_cmd_(R_password        _password,
+                        R_messenger_name  _name,
+                        t_messenger_scope _scope)
+      : t_cmd{cmd_id}, password{_password}, name{_name}, scope{_scope} {
     }
   };
   using r_create_group_cmd_ = t_prefix<t_create_group_cmd_>::r_;
@@ -821,16 +820,15 @@ namespace message
   struct t_is_group_cmd_ : t_cmd {
     constexpr static command::t_id cmd_id = 10;
     R_messenger_name       name;
-    r_messenger_visibility visibility;
+    r_messenger_scope      scope;
     p_messenger_group_list group_list;
     t_bool                 found = false;
 
     inline
     t_is_group_cmd_(R_messenger_name       _name,
-                    r_messenger_visibility _visibility,
+                    r_messenger_scope      _scope,
                     p_messenger_group_list _group_list)
-      : t_cmd{cmd_id}, name{_name}, visibility{_visibility},
-        group_list{_group_list} {
+      : t_cmd{cmd_id}, name{_name}, scope{_scope}, group_list{_group_list} {
     }
   };
   using r_is_group_cmd_ = t_prefix<t_is_group_cmd_>::r_;
@@ -944,18 +942,17 @@ namespace message
   };
   using r_get_params_cmd_ = t_prefix<t_get_params_cmd_>::r_;
 
-  struct t_update_visibility_cmd_ : t_cmd {
+  struct t_update_scope_cmd_ : t_cmd {
     constexpr static command::t_id cmd_id = 18;
-    R_messenger_key        id;
-    t_messenger_visibility visibility;
+    R_messenger_key   id;
+    t_messenger_scope scope;
 
     inline
-    t_update_visibility_cmd_(R_messenger_key        _id,
-                             t_messenger_visibility _visibility)
-      : t_cmd{cmd_id}, id{_id}, visibility{_visibility} {
+    t_update_scope_cmd_(R_messenger_key _id, t_messenger_scope _scope)
+      : t_cmd{cmd_id}, id{_id}, scope{_scope} {
     }
   };
-  using r_update_visibility_cmd_ = t_prefix<t_update_visibility_cmd_>::r_;
+  using r_update_scope_cmd_ = t_prefix<t_update_scope_cmd_>::r_;
 
   struct t_update_alive_period_cmd_ : t_cmd {
     constexpr static command::t_id cmd_id = 19;
@@ -1190,12 +1187,12 @@ namespace message
   using t_grp_member_lookup_entry_ = t_grp_member_lookup_::value_type;
 
   struct t_grp_ctxt_ {
-    t_bool                 exist = {false};
-    t_messenger_key        key   = t_messenger_key{0};
-    t_messenger_visibility visibility;
-    t_messenger_name       name;
-    t_password             password;
-    t_grp_member_lookup_   members;
+    t_bool               exist = {false};
+    t_messenger_key      key   = t_messenger_key{0};
+    t_messenger_scope    scope;
+    t_messenger_name     name;
+    t_password           password;
+    t_grp_member_lookup_ members;
   };
   using p_grp_ctxt_  = t_prefix<t_grp_ctxt_>::p_;
   using R_grp_ctxt_  = t_prefix<t_grp_ctxt_>::R_;
@@ -1299,7 +1296,7 @@ namespace message
           id = make_key(0/* sequence - XXX */, r.id);
           ctxt.info.key    = p.first->second = id;
           ctxt.info.name   = name;
-          ctxt.info.params.visibility   = params.visibility;
+          ctxt.info.params.scope        = params.scope;
           ctxt.info.params.alive_factor = params.alive_factor;
           ctxt.info.params.timer_params = params.timer_params;
 
@@ -1368,11 +1365,38 @@ namespace message
                         r_messenger_params params) {
       auto m = lookup_.find(name);
       if (m != lookup_.end()) {
-        if (!is_group(m->second) && is_local(m->second))
+        if (!is_group(m->second) && is_local(m->second)) {
+          auto ctxt = msgr_ctxts_.get(get_ctxt_id(m->second));
+          params = ctxt->info.params;
           return true;
+        }
       } else
         err = err::E_XXX;
       return false;
+    }
+
+    t_bool is_messenger(err::t_err err, R_messenger_name name,
+                        r_messenger_info info, t_bool clearstats) {
+      auto m = lookup_.find(name);
+      if (m != lookup_.end()) {
+        if (!is_group(m->second) && is_local(m->second)) {
+          auto ctxt = msgr_ctxts_.get(get_ctxt_id(m->second));
+          info = ctxt->info;
+          if (clearstats)
+            ctxt->info.stats.reset();
+          return true;
+        }
+      } else
+        err = err::E_XXX;
+      return false;
+    }
+
+    t_void create_group(err::t_err err, r_msgs_ msgs, R_password password,
+                        R_messenger_name name, t_messenger_scope scope) {
+      auto m = lookup_.find(name); // insert.
+      if (m == lookup_.end()) {
+      } else
+        err = err::E_XXX;
     }
 
     t_bool add_messenger_to_group(R_messenger_password password,
@@ -1503,12 +1527,12 @@ namespace message
 
     t_void process(err::t_err, r_update_params_cmd_) noexcept {
       printf("messaging: r_update_params_cmd_\n");
-      //XXX-1
+      //XXX- later
     }
 
     t_void process(err::t_err, r_fetch_params_cmd_) noexcept {
       printf("messaging: r_fetch_params_cmd_\n");
-      //XXX-2
+      //XXX- later
     }
 
     t_void process(err::t_err err, r_create_messenger_cmd_ cmd) noexcept {
@@ -1527,19 +1551,19 @@ namespace message
       cmd.found = data_.is_messenger(err, cmd.name, cmd.params);
     }
 
-    t_void process(err::t_err, r_is_messenger_info_cmd_) noexcept {
+    t_void process(err::t_err err, r_is_messenger_info_cmd_ cmd) noexcept {
       printf("messaging: r_is_messenger_info_cmd_\n");
-      //XXX-6
+      cmd.found = data_.is_messenger(err, cmd.name, cmd.info, cmd.clearstats);
     }
 
     t_void process(err::t_err, r_fetch_messengers_cmd_) noexcept {
       printf("messaging: r_fetch_messengers_cmd_\n");
-      //XXX-7
+      //XXX- later
     }
 
-    t_void process(err::t_err, r_create_group_cmd_) noexcept {
+    t_void process(err::t_err err, r_create_group_cmd_ cmd) noexcept {
       printf("messaging: r_create_group_cmd_\n");
-      //XXX-8
+      data_.create_group(err, msgs_, cmd.password, cmd.name, cmd.scope);
     }
 
     t_void process(err::t_err, r_destroy_group_cmd_) noexcept {
@@ -1587,8 +1611,8 @@ namespace message
       //XXX-17
     }
 
-    t_void process(err::t_err, r_update_visibility_cmd_) noexcept {
-      printf("messaging: r_update_visibility_cmd_\n");
+    t_void process(err::t_err, r_update_scope_cmd_) noexcept {
+      printf("messaging: r_update_scope_cmd_\n");
       //XXX-18
     }
 
@@ -1714,8 +1738,8 @@ namespace message
           case t_get_params_cmd_::cmd_id:
             process(err, static_cast<r_get_params_cmd_>(cmd));
             break;
-          case t_update_visibility_cmd_::cmd_id:
-            process(err, static_cast<r_update_visibility_cmd_>(cmd));
+          case t_update_scope_cmd_::cmd_id:
+            process(err, static_cast<r_update_scope_cmd_>(cmd));
             break;
           case t_update_alive_period_cmd_::cmd_id:
             process(err, static_cast<r_update_alive_period_cmd_>(cmd));
@@ -1892,8 +1916,8 @@ namespace messenger
     }
 
     t_void create_group(r_err err, R_password password, R_messenger_name group,
-                        t_messenger_visibility visibility) {
-      t_create_group_cmd_ cmd{password, group, visibility};
+                        t_messenger_scope scope) {
+      t_create_group_cmd_ cmd{password, group, scope};
       cmd_client_.request(err, cmd);
     }
 
@@ -1903,10 +1927,9 @@ namespace messenger
       cmd_client_.request(err, cmd);
     }
 
-    t_bool is_group(r_err err, R_messenger_name group,
-                    r_messenger_visibility visibility,
+    t_bool is_group(r_err err, R_messenger_name group, r_messenger_scope scope,
                     p_messenger_group_list group_list) {
-      t_is_group_cmd_ cmd{group, visibility, group_list};
+      t_is_group_cmd_ cmd{group, scope, group_list};
       cmd_client_.request(err, cmd);
       return cmd.found;
     }
@@ -1961,9 +1984,9 @@ namespace messenger
       cmd_client_.request(err, cmd);
     }
 
-    t_void update_visibility(r_err err, R_messenger_key id,
-                             t_messenger_visibility visibility) {
-      t_update_visibility_cmd_ cmd{id, visibility};
+    t_void update_scope(r_err err, R_messenger_key id,
+                        t_messenger_scope scope) {
+      t_update_scope_cmd_ cmd{id, scope};
       cmd_client_.request(err, cmd);
     }
 
@@ -2083,12 +2106,12 @@ namespace messenger
 
 namespace messenger
 {
-  t_visibility_name to_name(t_visibility visibility) {
-    const char* tbl_[] = { "visibility_off",
-                           "visibility_process",
-                           "visibility_node",
-                           "visibility_system" };
-    return P_cstr{tbl_[visibility]};
+  t_scope_name to_name(t_scope scope) {
+    const char* tbl_[] = { "scope_off",
+                           "scope_process",
+                           "scope_node",
+                           "scope_system" };
+    return P_cstr{tbl_[scope]};
   }
 
   t_messenger::t_messenger(R_key id, x_maybe_processor_ processor)
@@ -2137,10 +2160,10 @@ namespace messenger
     }
   }
 
-  t_void t_messenger::update_visibility(t_err err, t_visibility visibility) {
+  t_void t_messenger::update_scope(t_err err, t_scope scope) {
     ERR_GUARD(err) {
       if (mr_)
-        mr_->update_visibility(err, id_, visibility);
+        mr_->update_scope(err, id_, scope);
       else
         err = err::E_XXX;
     }
@@ -2299,16 +2322,16 @@ namespace messenger
 
 ///////////////////////////////////////////////////////////////////////////////
 
-  t_visibility_name to_name(t_visibility visibility) {
-    const char* tbl_[] = { "visibility_off",
-                           "visibility_local",
-                           "visibility_slave",
-                           "visibility_master" };
-    return P_cstr{tbl_[visibility]};
+  t_scope_name to_name(t_scope scope) {
+    const char* tbl_[] = { "scope_off",
+                           "scope_local",
+                           "scope_slave",
+                           "scope_master" };
+    return P_cstr{tbl_[scope]};
   }
 
   t_messenger_create_params default_messenger_create_params() {
-    return {messenger::VISIBILITY_PROCESS,
+    return {messenger::SCOPE_PROCESS,
             t_multiple_of_100ms{2},
             R_messenger_timer_params{}};
   }
@@ -2400,10 +2423,10 @@ namespace messenger
   }
 
   t_void create_group(t_err err, R_password password, R_messenger_name name,
-                      t_messenger_visibility visibility) {
+                      t_messenger_scope scope) {
     ERR_GUARD(err) {
       if (mr_)
-        mr_->create_group(err, password, name, visibility);
+        mr_->create_group(err, password, name, scope);
       else
         err = err::E_XXX;
     }
@@ -2418,12 +2441,11 @@ namespace messenger
     }
   }
 
-  t_bool is_group(t_err err, R_messenger_name name,
-                  r_messenger_visibility visibility,
+  t_bool is_group(t_err err, R_messenger_name name, r_messenger_scope scope,
                   p_messenger_group_list group_list) {
     ERR_GUARD(err) {
       if (mr_)
-        return mr_->is_group(err, name, visibility, group_list);
+        return mr_->is_group(err, name, scope, group_list);
       err = err::E_XXX;
     }
     return false;
