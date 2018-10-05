@@ -725,7 +725,7 @@ namespace message
   };
   using r_fetch_params_cmd_ = t_prefix<t_fetch_params_cmd_>::r_;
 
-  struct t_make_messenger_cmd_ : t_cmd {
+  struct t_create_messenger_cmd_ : t_cmd {
     constexpr static command::t_id cmd_id = 3;
     R_messenger_name            name;
     R_messenger_create_params   params;
@@ -733,12 +733,12 @@ namespace message
     t_maybe_messenger_processor processor;
 
     inline
-    t_make_messenger_cmd_(R_messenger_name          _name,
-                          R_messenger_create_params _params)
+    t_create_messenger_cmd_(R_messenger_name          _name,
+                            R_messenger_create_params _params)
       : t_cmd{cmd_id}, name(_name), params(_params)  {
     }
   };
-  using r_make_messenger_cmd_ = t_prefix<t_make_messenger_cmd_>::r_;
+  using r_create_messenger_cmd_ = t_prefix<t_create_messenger_cmd_>::r_;
 
   struct t_destroy_messenger_cmd_ : t_cmd {
     constexpr static command::t_id cmd_id = 4;
@@ -1303,56 +1303,76 @@ namespace message
           ctxt.info.params.alive_factor = params.alive_factor;
           ctxt.info.params.timer_params = params.timer_params;
 
-          auto m = monitored_.find(ctxt.info.name);
-          if (m != monitored_.end()) {
-            m->second.key   = ctxt.info.key;
-            m->second.state = message::STATE_AVAILABLE;
-            update_msgs(msgs, m->first, m->second);
-          }
           if (get(ctxt.info.params.timer_params.factor.value)) { // start timer
             auto& tmr  = timers_[ctxt.info.key];
             tmr.params = ctxt.info.params.timer_params;
             tmr.cnt    = t_multiple_of_100ms{0};
             tmr.start  = t_time(); // timestamp
           }
-          //cmd - XXX return end
-          return;
-        } else
+
+          auto m = monitored_.find(ctxt.info.name);
+          if (m != monitored_.end()) {
+            m->second.key   = ctxt.info.key;
+            m->second.state = message::STATE_AVAILABLE;
+            update_msgs(msgs, m->first, m->second);
+          }
+        } else {
           err = err::E_XXX;
-        lookup_.erase(p.first);
-        processor.release();
+          lookup_.erase(p.first);
+          processor.release();
+        }
       } else
         err = err::E_XXX;
     }
 
-    t_void remove_messenger(r_msgs_ msgs, r_msgr_ctxt_ ctxt) {
-      for (auto& monitor : ctxt.info.params.monitor_list) {
-        auto m = monitored_.find(monitor.first);
-        r_monitored_ entry = m->second;
-        entry.by.erase(ctxt.info.name);
-        if (entry.by.empty())
-          monitored_.erase(m);
-      }
-
-      for (auto& group : ctxt.info.params.group_list) {
-        auto g     = lookup_.find(group.first);
-        auto gid   = get_ctxt_id(g->second);
-        auto gctxt = grp_ctxts_.get(gid);
-        gctxt->members.erase(ctxt.info.name);
-        if (gctxt->members.empty() && !is_valid(gctxt->key)) {
-          grp_ctxts_.erase(gid);
-          lookup_.erase(g);
+    t_void destroy_messenger(err::t_err err, r_msgs_ msgs,
+                             R_messenger_key key) {
+      auto mid  = get_ctxt_id(key);
+      auto ctxt = msgr_ctxts_.get(mid);
+      if (ctxt) {
+        for (auto& monitor : ctxt->info.params.monitor_list) {
+          auto m = monitored_.find(monitor.first);
+          r_monitored_ entry = m->second;
+          entry.by.erase(ctxt->info.name);
+          if (entry.by.empty())
+            monitored_.erase(m);
         }
-      }
 
-      timers_.erase(ctxt.info.key);
+        for (auto& group : ctxt->info.params.group_list) {
+          auto g     = lookup_.find(group.first);
+          auto gid   = get_ctxt_id(g->second);
+          auto gctxt = grp_ctxts_.get(gid);
+          gctxt->members.erase(ctxt->info.name);
+          if (gctxt->members.empty() && !is_valid(gctxt->key)) {
+            grp_ctxts_.erase(gid);
+            lookup_.erase(g);
+          }
+        }
 
-      auto m = monitored_.find(ctxt.info.name);
-      if (m != monitored_.end()) {
-        set(m->second.key) = 0;
-        m->second.state = message::STATE_UNAVAILABLE;
-        update_msgs(msgs, m->first, m->second);
-      }
+        timers_.erase(ctxt->info.key);
+
+        auto m = monitored_.find(ctxt->info.name);
+        if (m != monitored_.end()) {
+          set(m->second.key) = 0;
+          m->second.state = message::STATE_UNAVAILABLE;
+          update_msgs(msgs, m->first, m->second);
+        }
+
+        lookup_.erase(ctxt->info.name);
+        msgr_ctxts_.erase(mid);
+      } else
+        err = err::E_XXX;
+    }
+
+    t_bool is_messenger(err::t_err err, R_messenger_name name,
+                        r_messenger_params params) {
+      auto m = lookup_.find(name);
+      if (m != lookup_.end()) {
+        if (!is_group(m->second) && is_local(m->second))
+          return true;
+      } else
+        err = err::E_XXX;
+      return false;
     }
 
     t_bool add_messenger_to_group(R_messenger_password password,
@@ -1368,6 +1388,9 @@ namespace message
                                        R_messenger_name     group,
                                        p_messenger_user     user) {
       return false;
+    }
+
+    void forward_msgs(r_msgs_) {
     }
 
   private:
@@ -1453,7 +1476,7 @@ namespace message
 
     virtual t_quit notify_events_processed() override {
       printf("messaging: notify_events_processed\n");
-      //msgs - msgs should not be part of data.
+      data_.forward_msgs(msgs_);
       return false;
     }
 
@@ -1476,6 +1499,8 @@ namespace message
       printf("messaging: p_command\n");
     }
 
+///////////////////////////////////////////////////////////////////////////////
+
     t_void process(err::t_err, r_update_params_cmd_) noexcept {
       printf("messaging: r_update_params_cmd_\n");
       //XXX-1
@@ -1486,21 +1511,20 @@ namespace message
       //XXX-2
     }
 
-    t_void process(err::t_err err, r_make_messenger_cmd_ cmd) noexcept {
-      printf("messaging: r_make_messenger_cmd_\n");
+    t_void process(err::t_err err, r_create_messenger_cmd_ cmd) noexcept {
+      printf("messaging: r_create_messenger_cmd_\n");
       data_.add_messenger(err, msgs_, cmd.id, cmd.processor, cmd.name,
                           cmd.params);
     }
 
-    t_void process(err::t_err, r_destroy_messenger_cmd_) noexcept {
+    t_void process(err::t_err err, r_destroy_messenger_cmd_ cmd) noexcept {
       printf("messaging: r_destroy_messenger_cmd_\n");
-      //data_.del_messenger(err, cmd);
-      //XXX-4
+      data_.destroy_messenger(err, msgs_, cmd.id);
     }
 
-    t_void process(err::t_err, r_is_messenger_cmd_) noexcept {
+    t_void process(err::t_err err, r_is_messenger_cmd_ cmd) noexcept {
       printf("messaging: r_is_messenger_cmd_\n");
-      //XXX-5
+      cmd.found = data_.is_messenger(err, cmd.name, cmd.params);
     }
 
     t_void process(err::t_err, r_is_messenger_info_cmd_) noexcept {
@@ -1534,7 +1558,7 @@ namespace message
     }
 
     t_void process(err::t_err, r_remove_messenger_from_group_cmd_) noexcept {
-      printf("messaging: r_remove_messenger_from_group_cmd_\n");
+      printf("messaging: r_destroy_messenger_from_group_cmd_\n");
       //XXX-12
     }
 
@@ -1633,6 +1657,8 @@ namespace message
       ev_cmd_ = QUIT_EVENT_LOOP;
     }
 
+///////////////////////////////////////////////////////////////////////////////
+
     virtual t_void process(t_cmd_err err, t_user,
                            r_command cmd) noexcept override {
       ERR_GUARD(err) {
@@ -1643,8 +1669,8 @@ namespace message
           case t_fetch_params_cmd_::cmd_id:
             process(err, static_cast<r_fetch_params_cmd_>(cmd));
             break;
-          case t_make_messenger_cmd_::cmd_id:
-            process(err, static_cast<r_make_messenger_cmd_>(cmd));
+          case t_create_messenger_cmd_::cmd_id:
+            process(err, static_cast<r_create_messenger_cmd_>(cmd));
             break;
           case t_destroy_messenger_cmd_::cmd_id:
             process(err, static_cast<r_destroy_messenger_cmd_>(cmd));
@@ -1788,9 +1814,9 @@ namespace message
       r_que_processor_logic logic_;
     };
 
-    t_msgs_         msgs_;
     t_event_cmd     ev_cmd_;
     t_data_         data_;
+    t_msgs_         msgs_;
     t_cmd_processor cmd_processor_;
     t_que_processor que_processor_;
     t_dispatcher    dispatcher_;
@@ -1834,7 +1860,7 @@ namespace messenger
 
     t_messenger create_messenger(r_err err, R_messenger_name name,
                                  R_messenger_create_params params) {
-      t_make_messenger_cmd_ cmd{name, params};
+      t_create_messenger_cmd_ cmd{name, params};
       cmd_client_.request(err, cmd);
       return messenger::mk_(cmd.id, std::move(cmd.processor));
     }
