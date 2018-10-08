@@ -214,7 +214,7 @@ namespace messaging
 
 ///////////////////////////////////////////////////////////////////////////////
 
-  t_bool who_is(t_err, R_messenger_key, r_messenger_name,
+  t_void who_is(t_err, R_messenger_key, r_messenger_name,
                        p_bool group = nullptr, p_bool local = nullptr);
 
 ///////////////////////////////////////////////////////////////////////////////

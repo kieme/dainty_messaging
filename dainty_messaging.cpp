@@ -909,7 +909,6 @@ namespace message
     r_messenger_name name;
     p_bool           group;
     p_bool           local;
-    t_bool           found = false;
 
     inline
     t_who_is_cmd_(R_messenger_key _key, r_messenger_name _name,
@@ -1233,44 +1232,35 @@ namespace message
     t_data_(R_name _name, R_params _params) : name{_name}, params(_params) {
     }
 
-    t_void update_msgs(r_msgs_           msgs,
-                       t_messenger_state state,
-                       p_grp_ctxt_       ctxt,
-                       r_grp_member_     member) {
+    t_void update_msgs(r_msgs_ msgs, t_messenger_state state,
+                       p_grp_ctxt_ ctxt, r_grp_member_ member) {
       auto key_params{get_key_params(member.key)};
-      if (key_params.local) {
-        if (!key_params.group) {
-          message::t_notify_message msg;
-          message::write_notify_msg_(msg,
-                                     member.key,
-                                     state,
-                                     ctxt->name,
-                                     ctxt->key,
-                                     member.prio,
-                                     member.user);
-          msgs.insert(t_msgs_entry_{member.prio, std::move(msg)});
-        } else {
-          auto ctxt = grp_ctxts_.get(key_params.id);
-          if (ctxt && is_valid(ctxt->key))
-            for (auto& member : ctxt->members)
-              update_msgs(msgs, state, ctxt, member.second);
-        }
+      if (!key_params.group || !key_params.local) {
+        message::t_notify_message msg;
+        message::write_notify_msg_(msg,
+                                   member.key,
+                                   state,
+                                   ctxt->name,
+                                   ctxt->key,
+                                   member.prio,
+                                   member.user);
+        msgs.insert(t_msgs_entry_{member.prio, std::move(msg)});
       } else {
-        // remote ctxt - table per remote connection.
+        auto ctxt = grp_ctxts_.get(key_params.id);
+        if (ctxt && is_valid(ctxt->key))
+          for (auto& member : ctxt->members)
+            update_msgs(msgs, state, ctxt, member.second);
       }
     }
 
-    t_void update_msgs(r_msgs_           msgs,
-                       t_messenger_state state,
-                       p_grp_ctxt_       ctxt) {
+    t_void update_msgs(r_msgs_ msgs, t_messenger_state state,
+                       p_grp_ctxt_ ctxt) {
       for (auto& member : ctxt->members)
         update_msgs(msgs, state, ctxt, member.second);
     }
 
-    t_void update_msgs(r_msgs_          msgs,
-                       R_messenger_name name,
-                       R_monitored_     monitored,
-                       R_monitored_by_  monitor) {
+    t_void update_msgs(r_msgs_ msgs, R_messenger_name name,
+                       R_monitored_ monitored, R_monitored_by_ monitor) {
       message::t_notify_message msg;
       message::write_notify_msg_(msg,
                                  monitor.key,
@@ -1288,12 +1278,11 @@ namespace message
         update_msgs(msgs, name, monitored, monitor.second);
     }
 
-    t_void add_messenger(err::r_err                  err,
-                         r_msgs_                     msgs,
-                         r_messenger_key             id,
+    t_void add_messenger(err::r_err err, r_msgs_ msgs,
+                         r_messenger_key id,
                          r_maybe_messenger_processor processor,
-                         R_messenger_name            name,
-                         R_messenger_create_params   params) {
+                         R_messenger_name name,
+                         R_messenger_create_params params) {
       auto p = lookup_.insert(t_lookup_entry_{name, t_messenger_key{0}});
       if (p.second) {
         processor.emplace(err, t_n{100});
@@ -1330,8 +1319,7 @@ namespace message
         err = err::E_XXX;
     }
 
-    t_void destroy_messenger(err::r_err err, r_msgs_ msgs,
-                             R_messenger_key key) {
+    t_void destroy_messenger(err::r_err err, r_msgs_ msgs, R_messenger_key key) {
       auto mid  = get_ctxt_id(key);
       auto ctxt = msgr_ctxts_.get(mid);
       if (ctxt) {
@@ -1434,6 +1422,7 @@ namespace message
         } else
           err = err::E_XXX;
       }
+
       if (!err && ctxt) {
         auto monitored = monitored_.find(name);
         if (monitored != monitored_.end()) {
@@ -1463,6 +1452,7 @@ namespace message
            err = err::E_XXX;
       } else
         err = err::E_XXX;
+
       if (!err) {
         auto monitored = monitored_.find(name);
         if (monitored != monitored_.end()) {
@@ -1474,10 +1464,9 @@ namespace message
 
     t_void add_messenger_to_group(err::r_err err, r_msgs_ msgs,
                                   R_messenger_password password,
-                                  R_messenger_name     name,
-                                  R_messenger_name     group,
-                                  t_messenger_prio     prio,
-                                  t_messenger_user     user) {
+                                  R_messenger_name name, R_messenger_name group,
+                                  t_messenger_prio prio,
+                                  t_messenger_user user) {
       auto msgr = lookup_.find(name);
       if (msgr != lookup_.end()) {
         p_grp_ctxt_ ctxt = nullptr;
@@ -1519,9 +1508,9 @@ namespace message
 
     t_void remove_messenger_from_group(err::r_err err,
                                        R_messenger_password password,
-                                       R_messenger_name     name,
-                                       R_messenger_name     group,
-                                       p_messenger_user     user) {
+                                       R_messenger_name name,
+                                       R_messenger_name group,
+                                       p_messenger_user user) {
       auto grp = lookup_.find(group);
       if (grp != lookup_.end()) {
         auto& key = grp->second;
@@ -1550,16 +1539,20 @@ namespace message
 
     t_void add_messenger_to_group(err::r_err err, r_msgs_ msgs,
                                   R_messenger_password password,
-                                  R_messenger_key      key,
-                                  R_messenger_name     group,
-                                  t_messenger_prio     prio,
-                                  t_messenger_user     user) {
+                                  R_messenger_key key, R_messenger_name group,
+                                  t_messenger_prio prio,
+                                  t_messenger_user user) {
       if (!is_group(key) && is_local(key)) {
         auto ctxt = msgr_ctxts_.get(get_ctxt_id(key));
-        if (ctxt)
+        if (ctxt) {
           add_messenger_to_group(err, msgs, password, ctxt->info.name, group,
                                  prio, user);
-        else
+          if (!err) {
+            messenger::t_group_list::value_type
+              entry{group, messenger::t_group{group, password, prio, user}};
+            ctxt->info.params.group_list.insert(std::move(entry));
+          }
+        } else
           err = err::E_XXX;
       } else
         err = err::E_XXX;
@@ -1567,55 +1560,62 @@ namespace message
 
     t_void remove_messenger_from_group(err::r_err err,
                                        R_messenger_password password,
-                                       R_messenger_key      key,
-                                       R_messenger_name     group,
-                                       p_messenger_user     user) {
+                                       R_messenger_key key,
+                                       R_messenger_name group,
+                                       p_messenger_user user) {
       if (!is_group(key) && is_local(key)) {
         auto ctxt = msgr_ctxts_.get(get_ctxt_id(key));
-        if (ctxt)
+        if (ctxt) {
           remove_messenger_from_group(err, password, ctxt->info.name, group,
                                       user);
-        else
+          if (!err)
+            ctxt->info.params.group_list.erase(group);
+        } else
           err = err::E_XXX;
       } else
         err = err::E_XXX;
     }
 
-    t_void add_monitor(err::r_err err, r_msgs_ msgs,
-                       R_messenger_key  key,
-                       R_messenger_name name,
-                       t_messenger_prio prio,
+    t_void add_monitor(err::r_err err, r_msgs_ msgs, R_messenger_key key,
+                       R_messenger_name name, t_messenger_prio prio,
                        t_messenger_user user) {
       if (!is_group(key) && is_local(key)) {
         auto ctxt = msgr_ctxts_.get(get_ctxt_id(key));
         if (ctxt) {
-          t_monitored_lookup_entry_ entry{name, t_monitored_{}};
-          auto pair = monitored_.insert(std::move(entry));
-          if (pair.second || pair.first != monitored_.end()) {
-            auto& monitored = pair.first->second;
-            t_monitored_by_lookup_entry_ entry{ctxt->info.name,
-                                               t_monitored_by_{key, prio, user}};
-            auto member = monitored.by.insert(std::move(entry));
-            if (member.second) {
-              auto lk = lookup_.find(name);
-              if (lk != lookup_.end()) {
-                auto& key = lk->second;
-                if (is_local(key)) {
-                  if (is_group(key)) {
-                    monitored.state = message::STATE_AVAILABLE; //XXX
+          messenger::t_monitor_list::value_type
+            tmp{name, messenger::t_monitor{name, prio, user}};
+          auto mpair = ctxt->info.params.monitor_list.insert(std::move(tmp));
+          if (mpair.second) {
+            t_monitored_lookup_entry_ tmp{name, t_monitored_{}};
+            auto pair = monitored_.insert(std::move(tmp));
+            if (pair.second || pair.first != monitored_.end()) {
+              auto& monitored = pair.first->second;
+              t_monitored_by_lookup_entry_
+                tmp{ctxt->info.name, t_monitored_by_{key, prio, user}};
+              auto member = monitored.by.insert(std::move(tmp));
+              if (member.second) {
+                auto lk = lookup_.find(name);
+                if (lk != lookup_.end()) {
+                  auto& key = lk->second;
+                  if (is_local(key) && is_group(key)) {
+                    auto gctxt = grp_ctxts_.get(get_ctxt_id(key));
+                    monitored.state = is_valid(gctxt->key) ?
+                                        message::STATE_AVAILABLE :
+                                        message::STATE_UNAVAILABLE;
                   } else
                     monitored.state = message::STATE_AVAILABLE;
 
-                  if (monitored.state == message::STATE_AVAILABLE) // XXX SCOPE
+                  if (monitored.state == message::STATE_AVAILABLE)
                     update_msgs(msgs, name, monitored, member.first->second);
-                } else {
-                  // remote
                 }
-              }
-            } else {
-              //XXX cleanup
+                return;
+              } else
+                err = err::E_XXX;
+              if (monitored.by.empty())
+                monitored_.erase(pair.first);
+            } else
               err = err::E_XXX;
-            }
+            ctxt->info.params.monitor_list.erase(mpair.first);
           } else
             err = err::E_XXX;
         } else
@@ -1624,20 +1624,60 @@ namespace message
         err = err::E_XXX;
     }
 
-    t_void remove_monitor(err::r_err err,
-                          R_messenger_key  key,
-                          R_messenger_name name,
-                          p_messenger_user user) {
+    t_void remove_monitor(err::r_err err, R_messenger_key key,
+                          R_messenger_name name, p_messenger_user user) {
       if (!is_group(key) && is_local(key)) {
         auto ctxt = msgr_ctxts_.get(get_ctxt_id(key));
         if (ctxt) {
+          auto monitor = ctxt->info.params.monitor_list.find(name);
+          if (monitor != ctxt->info.params.monitor_list.end()) {
+            ctxt->info.params.monitor_list.erase(monitor);
+            auto monitored = monitored_.find(name);
+            if (monitored != monitored_.end()) {
+              auto monitor = monitored->second.by.find(ctxt->info.name);
+              if (monitor != monitored->second.by.end()) {
+                if (user)
+                  *user = monitor->second.user;
+                monitored->second.by.erase(monitor);
+                if (monitored->second.by.empty())
+                  monitored_.erase(monitored);
+              } else
+                err = err::E_XXX;
+            } else
+              err = err::E_XXX;
+          } else
+            err = err::E_XXX;
         } else
           err = err::E_XXX;
       } else
         err = err::E_XXX;
     }
 
-    t_void forward_msgs(r_msgs_) {
+    t_void who_is(err::r_err err, R_messenger_key key,
+                  r_messenger_name name, p_bool group, p_bool local) {
+      auto key_params = get_key_params(key);
+      if (key_params.local) {
+        if (key_params.group) {
+          auto ctxt = grp_ctxts_.get(key_params.id);
+          name = ctxt->name;
+        } else {
+          auto ctxt = msgr_ctxts_.get(key_params.id);
+          name = ctxt->info.name;
+        }
+      } else
+        err = err::E_XXX; // XXX remote -table
+
+      if (!err) {
+        if (group)
+          *group = key_params.group;
+        if (local)
+          *local = key_params.local;
+      }
+    }
+
+    t_void forward_msgs(r_msgs_ msgs) {
+      // can print
+      msgs.clear();
     }
 
   private:
@@ -1822,9 +1862,9 @@ namespace message
       //XXX- later
     }
 
-    t_void process(err::t_err, r_who_is_cmd_) noexcept {
+    t_void process(err::t_err err, r_who_is_cmd_ cmd) noexcept {
       printf("messaging: r_who_is_cmd_\n");
-      //XXX-15
+      data_.who_is(err, cmd.key, cmd.name, cmd.group, cmd.local);
     }
 
     t_void process(err::t_err, r_get_name_cmd_) noexcept {
@@ -2193,11 +2233,10 @@ namespace messenger
       cmd_client_.request(err, cmd);
     }
 
-    t_bool who_is(r_err err, R_messenger_key key, r_messenger_name name,
+    t_void who_is(r_err err, R_messenger_key key, r_messenger_name name,
                              p_bool group, p_bool local) {
       t_who_is_cmd_ cmd{key, name, group, local};
       cmd_client_.request(err, cmd);
-      return cmd.found;
     }
 
     t_messenger_name get_name(r_err err, R_messenger_key id) {
@@ -2724,14 +2763,14 @@ namespace messenger
     }
   }
 
-  t_bool who_is(t_err err, R_messenger_key key, r_messenger_name name,
+  t_void who_is(t_err err, R_messenger_key key, r_messenger_name name,
                 p_bool group, p_bool local) {
     ERR_GUARD(err) {
       if (mr_)
-        return mr_->who_is(err, key, name, group, local);
-      err = err::E_XXX;
+        mr_->who_is(err, key, name, group, local);
+      else
+        err = err::E_XXX;
     }
-    return false;
   }
 
 ///////////////////////////////////////////////////////////////////////////////
