@@ -61,9 +61,11 @@ using event_dispatcher::RD;
 using messenger::t_multiple_of_100ms;
 using message::t_message;
 using message::x_message;
+using message::R_message;
 using message::t_messenger_key_;
 using message::t_messenger_state;
 using message::t_messenger_prio;
+using messaging::err::r_err;
 
 using t_ctxt_id                   = freelist::t_id;
 using t_thd_err                   = t_thread::t_logic::t_err;
@@ -74,6 +76,7 @@ using r_cmd_processor             = t_prefix<t_cmd_processor>::r_;
 using r_cmd_processor_logic       = t_prefix<t_cmd_processor::t_logic>::r_;
 using t_cmd                       = command::t_command;
 using t_any_user                  = any::t_user;
+using x_any                       = t_prefix<t_any>::x_;
 using t_que_chain                 = waitable_chained_queue::t_chain;
 using t_que_client                = waitable_chained_queue::t_client;
 using t_que_processor             = waitable_chained_queue::t_processor;
@@ -688,20 +691,9 @@ namespace message
   t_bool t_alive_message::get() {
     return read_alive_msg_(*this);
   }
+
+  inline t_bool operator==(R_message, R_message) { return false; }
 }
-
-///////////////////////////////////////////////////////////////////////////////
-
-  struct t_item_ {
-    t_message        msg;
-    t_messenger_key  id   = t_messenger_key{0};
-    t_messenger_key  key  = t_messenger_key{0};
-    t_messenger_user user = t_messenger_user{0L};
-    t_messenger_prio prio = t_messenger_prio{0};
-  };
-  using R_item_ = t_prefix<t_item_>::R_;
-
-  inline t_bool operator==(R_item_, R_item_) { return false; }
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -819,16 +811,16 @@ namespace message
 
   struct t_is_group_cmd_ : t_cmd {
     constexpr static command::t_id cmd_id = 10;
-    R_messenger_name       name;
-    r_messenger_scope      scope;
-    p_messenger_group_list group_list;
-    t_bool                 found = false;
+    R_messenger_name      name;
+    r_messenger_scope     scope;
+    p_messenger_name_list name_list;
+    t_bool                found = false;
 
     inline
-    t_is_group_cmd_(R_messenger_name       _name,
-                    r_messenger_scope      _scope,
-                    p_messenger_group_list _group_list)
-      : t_cmd{cmd_id}, name{_name}, scope{_scope}, group_list{_group_list} {
+    t_is_group_cmd_(R_messenger_name      _name,
+                    r_messenger_scope     _scope,
+                    p_messenger_name_list _name_list)
+      : t_cmd{cmd_id}, name{_name}, scope{_scope}, name_list{_name_list} {
     }
   };
   using r_is_group_cmd_ = t_prefix<t_is_group_cmd_>::r_;
@@ -1278,8 +1270,7 @@ namespace message
         update_msgs(msgs, name, monitored, monitor.second);
     }
 
-    t_void add_messenger(err::r_err err, r_msgs_ msgs,
-                         r_messenger_key id,
+    t_void add_messenger(r_err err, r_msgs_ msgs, r_messenger_key id,
                          r_maybe_messenger_processor processor,
                          R_messenger_name name,
                          R_messenger_create_params params) {
@@ -1319,7 +1310,7 @@ namespace message
         err = err::E_XXX;
     }
 
-    t_void destroy_messenger(err::r_err err, r_msgs_ msgs, R_messenger_key key) {
+    t_void destroy_messenger(r_err err, r_msgs_ msgs, R_messenger_key key) {
       auto mid  = get_ctxt_id(key);
       auto ctxt = msgr_ctxts_.get(mid);
       if (ctxt) {
@@ -1357,7 +1348,7 @@ namespace message
         err = err::E_XXX;
     }
 
-    t_bool is_messenger(err::r_err err, R_messenger_name name,
+    t_bool is_messenger(r_err err, R_messenger_name name,
                         r_messenger_params params) {
       auto m = lookup_.find(name);
       if (m != lookup_.end()) {
@@ -1371,7 +1362,7 @@ namespace message
       return false;
     }
 
-    t_bool is_messenger(err::r_err err, R_messenger_name name,
+    t_bool is_messenger(r_err err, R_messenger_name name,
                         r_messenger_info info, t_bool clearstats) {
       auto m = lookup_.find(name);
       if (m != lookup_.end()) {
@@ -1387,7 +1378,17 @@ namespace message
       return false;
     }
 
-    t_void create_group(err::r_err err, r_msgs_ msgs, R_password password,
+    t_void get_messenger_name(r_err err, r_messenger_name name,
+                              R_messenger_key key) {
+      auto mid  = get_ctxt_id(key);
+      auto ctxt = msgr_ctxts_.get(mid);
+      if (ctxt)
+         name = ctxt->info.name;
+      else
+        err = err::E_XXX;
+    }
+
+    t_void create_group(r_err err, r_msgs_ msgs, R_password password,
                         R_messenger_name name, t_messenger_scope scope) {
       p_grp_ctxt_ ctxt = nullptr;
       auto pair = lookup_.insert(t_lookup_entry_{name, t_messenger_key{0}});
@@ -1433,8 +1434,8 @@ namespace message
       }
     }
 
-    t_void destroy_group(err::r_err err, r_msgs_ msgs, R_password password,
-                        R_messenger_name name) {
+    t_void destroy_group(r_err err, r_msgs_ msgs, R_password password,
+                         R_messenger_name name) {
       auto itr = lookup_.find(name);
       if (itr != lookup_.end()) {
         auto& key = itr->second;
@@ -1462,7 +1463,7 @@ namespace message
       }
     }
 
-    t_void add_messenger_to_group(err::r_err err, r_msgs_ msgs,
+    t_void add_messenger_to_group(r_err err, r_msgs_ msgs,
                                   R_messenger_password password,
                                   R_messenger_name name, R_messenger_name group,
                                   t_messenger_prio prio,
@@ -1506,7 +1507,7 @@ namespace message
       }
     }
 
-    t_void remove_messenger_from_group(err::r_err err,
+    t_void remove_messenger_from_group(r_err err,
                                        R_messenger_password password,
                                        R_messenger_name name,
                                        R_messenger_name group,
@@ -1537,7 +1538,27 @@ namespace message
         err = err::E_XXX;
     }
 
-    t_void add_messenger_to_group(err::r_err err, r_msgs_ msgs,
+    t_bool is_messenger_group(r_err err, R_messenger_name group,
+                              r_messenger_scope scope,
+                              p_messenger_name_list name_list) {
+      auto grp = lookup_.find(group);
+      if (grp != lookup_.end()) {
+        auto& key = grp->second;
+        if (is_group(key) && is_local(key)) {
+          auto id   = get_ctxt_id(key);
+          auto ctxt = grp_ctxts_.get(id);
+          scope = ctxt->scope;
+          if (name_list) {
+            for (auto& member : ctxt->members)
+              name_list->push_back(member.first);
+          }
+          return true;
+        }
+      }
+      return false;
+    }
+
+    t_void add_messenger_to_group(r_err err, r_msgs_ msgs,
                                   R_messenger_password password,
                                   R_messenger_key key, R_messenger_name group,
                                   t_messenger_prio prio,
@@ -1558,8 +1579,7 @@ namespace message
         err = err::E_XXX;
     }
 
-    t_void remove_messenger_from_group(err::r_err err,
-                                       R_messenger_password password,
+    t_void remove_messenger_from_group(r_err err, R_messenger_password password,
                                        R_messenger_key key,
                                        R_messenger_name group,
                                        p_messenger_user user) {
@@ -1576,7 +1596,7 @@ namespace message
         err = err::E_XXX;
     }
 
-    t_void add_monitor(err::r_err err, r_msgs_ msgs, R_messenger_key key,
+    t_void add_monitor(r_err err, r_msgs_ msgs, R_messenger_key key,
                        R_messenger_name name, t_messenger_prio prio,
                        t_messenger_user user) {
       if (!is_group(key) && is_local(key)) {
@@ -1624,7 +1644,7 @@ namespace message
         err = err::E_XXX;
     }
 
-    t_void remove_monitor(err::r_err err, R_messenger_key key,
+    t_void remove_monitor(r_err err, R_messenger_key key,
                           R_messenger_name name, p_messenger_user user) {
       if (!is_group(key) && is_local(key)) {
         auto ctxt = msgr_ctxts_.get(get_ctxt_id(key));
@@ -1653,7 +1673,27 @@ namespace message
         err = err::E_XXX;
     }
 
-    t_void who_is(err::r_err err, R_messenger_key key,
+    t_bool is_messenger_in_group(r_err err, R_messenger_name name,
+                                 R_messenger_name group,
+                                 p_messenger_user user) {
+      auto grp = lookup_.find(group);
+      if (grp != lookup_.end()) {
+        auto& key = grp->second;
+        if (is_group(key) && is_local(key)) {
+          auto id   = get_ctxt_id(key);
+          auto ctxt = grp_ctxts_.get(id);
+          auto member = ctxt->members.find(name);
+          if (member != ctxt->members.end()) {
+            if (user)
+              *user = member->second.user;
+            return true;
+          }
+        }
+      }
+      return false;
+    }
+
+    t_void who_is(r_err err, R_messenger_key key,
                   r_messenger_name name, p_bool group, p_bool local) {
       auto key_params = get_key_params(key);
       if (key_params.local) {
@@ -1695,7 +1735,7 @@ namespace message
                    public t_que_processor::t_logic,
                    public t_dispatcher::t_logic {
   public:
-    t_logic_(err::r_err err, R_name name, R_params params)
+    t_logic_(r_err err, R_name name, R_params params)
       : data_         {name, params},
         cmd_processor_{err},
         que_processor_{err, data_.params.queuesize},
@@ -1767,14 +1807,13 @@ namespace message
       return false;
     }
 
-    t_void process_item(waitable_chained_queue::t_entry& entry) {
-      t_any any{std::move(entry.any)}; // took the data
-      auto& item = any.ref<t_item_>();
+    t_void process_item(x_any any) {
+      t_message msg{std::move(any.ref<t_message>())};
     }
 
-    t_void process_chain(t_chain& chain) { //XXX
+    t_void process_chain(t_chain& chain) {
       for (auto item = chain.head; item; item = item->next())
-        process_item(item->ref());
+        process_item(std::move(item->ref().any));
     }
 
     virtual t_void async_process(t_chain chain) noexcept override {
@@ -1793,9 +1832,9 @@ namespace message
       //XXX- later
     }
 
-    t_void process(err::t_err, r_fetch_params_cmd_) noexcept {
+    t_void process(err::t_err err, r_fetch_params_cmd_ cmd) noexcept {
       printf("messaging: r_fetch_params_cmd_\n");
-      //XXX- later
+      cmd.params = data_.params;
     }
 
     t_void process(err::t_err err, r_create_messenger_cmd_ cmd) noexcept {
@@ -1834,9 +1873,10 @@ namespace message
       data_.destroy_group(err, msgs_, cmd.password, cmd.name);
     }
 
-    t_void process(err::t_err, r_is_group_cmd_) noexcept {
+    t_void process(err::t_err err, r_is_group_cmd_ cmd) noexcept {
       printf("messaging: r_is_group_cmd_\n");
-      //XXX- later
+      cmd.found = data_.is_messenger_group(err, cmd.name, cmd.scope,
+                                           cmd.name_list);
     }
 
     t_void process(err::t_err err, r_add_messenger_to_group_cmd_ cmd) noexcept {
@@ -1852,12 +1892,13 @@ namespace message
                                         cmd.user);
     }
 
-    t_void process(err::t_err, r_is_messenger_in_group_cmd_) noexcept {
+    t_void process(err::t_err err, r_is_messenger_in_group_cmd_ cmd) noexcept {
       printf("messaging: r_is_messenger_in_group_cmd_\n");
-      //XXX- later
+      cmd.found = data_.is_messenger_in_group(err, cmd.name, cmd.group,
+                                              cmd.user);
     }
 
-    t_void process(err::t_err, r_fetch_messenger_groups_cmd_) noexcept {
+    t_void process(err::t_err err, r_fetch_messenger_groups_cmd_ cmd) noexcept {
       printf("messaging: r_fetch_messenger_groups_cmd_\n");
       //XXX- later
     }
@@ -1867,39 +1908,39 @@ namespace message
       data_.who_is(err, cmd.key, cmd.name, cmd.group, cmd.local);
     }
 
-    t_void process(err::t_err, r_get_name_cmd_) noexcept {
+    t_void process(err::t_err err, r_get_name_cmd_ cmd) noexcept {
       printf("messaging: r_get_name_cmd_\n");
-      //XXX- later
+      data_.get_messenger_name(err, cmd.name, cmd.id);
     }
 
-    t_void process(err::t_err, r_get_params_cmd_) noexcept {
+    t_void process(err::t_err err, r_get_params_cmd_ cmd) noexcept {
       printf("messaging: r_get_params_cmd_\n");
-      //XXX- later
+      //XXX-later - big step
     }
 
     t_void process(err::t_err, r_update_scope_cmd_) noexcept {
       printf("messaging: r_update_scope_cmd_\n");
-      //XXX- later - big one
+      //XXX-later - big one
     }
 
     t_void process(err::t_err, r_update_alive_period_cmd_) noexcept {
       printf("messaging: r_update_alive_period_cmd_\n");
-      //XXX-19
+      //XXX-now
     }
 
     t_void process(err::t_err, r_start_timer_cmd_) noexcept {
       printf("messaging: r_start_timer_cmd_\n");
-      //XXX-20
+      //XXX-now
     }
 
     t_void process(err::t_err, r_stop_timer_cmd_) noexcept {
       printf("messaging: r_stop_timer_cmd_\n");
-      //XXX-21
+      //XXX-now
     }
 
     t_void process(err::t_err, r_query_timer_cmd_) noexcept {
       printf("messaging: r_query_timer_cmd_\n");
-      //XXX-22
+      //XXX-now
     }
 
     t_void process(err::t_err err, r_add_to_group_cmd_ cmd) noexcept {
@@ -1916,12 +1957,12 @@ namespace message
 
     t_void process(err::t_err, r_is_in_group_cmd_) noexcept {
       printf("messaging: r_is_in_group_cmd_\n");
-      //XXX- later
+      //XXX-later
     }
 
     t_void process(err::t_err, r_get_groups_cmd_) noexcept {
       printf("messaging: r_get_groups_cmd_\n");
-      //XXX- later
+      //XXX-later
     }
 
     t_void process(err::t_err err, r_add_monitor_cmd_ cmd) noexcept {
@@ -1936,12 +1977,12 @@ namespace message
 
     t_void process(err::t_err, r_is_monitored_cmd_) noexcept {
       printf("messaging: r_is_monitored_cmd_\n");
-      //XXX- later
+      //XXX-later
     }
 
     t_void process(err::t_err, r_get_monitored_cmd_) noexcept {
       printf("messaging: r_get_monitored_cmd_\n");
-      //XXX- later
+      //XXX-later
     }
 
     t_void process(err::t_err, r_clean_death_cmd_) noexcept {
@@ -2060,8 +2101,8 @@ namespace message
   private:
     class t_cmd_proxy_ : public t_event_logic {
     public:
-      t_cmd_proxy_(err::r_err err, r_event_cmd ev_cmd,
-                   r_cmd_processor processor, r_cmd_processor_logic logic)
+      t_cmd_proxy_(r_err err, r_event_cmd ev_cmd, r_cmd_processor processor,
+                   r_cmd_processor_logic logic)
         : err_(err), ev_cmd_(ev_cmd), processor_(processor), logic_{logic} {
       }
 
@@ -2076,7 +2117,7 @@ namespace message
       }
 
     private:
-      err::r_err             err_;
+      r_err                 err_;
       r_event_cmd           ev_cmd_;
       r_cmd_processor       processor_;
       r_cmd_processor_logic logic_;
@@ -2084,8 +2125,8 @@ namespace message
 
     class t_que_proxy_ : public t_event_logic {
     public:
-      t_que_proxy_(err::r_err err, r_event_cmd ev_cmd,
-                   r_que_processor processor, r_que_processor_logic logic)
+      t_que_proxy_(r_err err, r_event_cmd ev_cmd, r_que_processor processor,
+                   r_que_processor_logic logic)
         : err_(err), ev_cmd_(ev_cmd), processor_(processor), logic_{logic} {
       }
 
@@ -2100,7 +2141,7 @@ namespace message
       }
 
     private:
-      err::r_err            err_;
+      r_err                 err_;
       r_event_cmd           ev_cmd_;
       r_que_processor       processor_;
       r_que_processor_logic logic_;
@@ -2131,8 +2172,6 @@ namespace messenger
 
   class t_messaging_ {
   public:
-    using r_err = t_prefix<t_err>::r_;
-
     t_messaging_(r_err err, R_name name, R_params params)
       : logic_     {err, name, params},
         cmd_client_{logic_.make_cmd_client()},
@@ -2196,8 +2235,8 @@ namespace messenger
     }
 
     t_bool is_group(r_err err, R_messenger_name group, r_messenger_scope scope,
-                    p_messenger_group_list group_list) {
-      t_is_group_cmd_ cmd{group, scope, group_list};
+                    p_messenger_name_list name_list) {
+      t_is_group_cmd_ cmd{group, scope, name_list};
       cmd_client_.request(err, cmd);
       return cmd.found;
     }
@@ -2267,10 +2306,9 @@ namespace messenger
                         x_message msg) {
       t_que_chain chain = que_client_.waitable_acquire(err);
       if (!err) {
-        t_item_& item = chain.head->ref().any.emplace<t_item_>(t_any_user{0L});
-        item.id  = id;
-        item.key = key;
-        item.msg = std::move(msg);
+        // XXX-now
+        t_any& any = chain.head->ref().any;
+        any.emplace<t_message>({0L}, std::move(msg));
         que_client_.insert(err, chain);
       }
     }
@@ -2463,13 +2501,8 @@ namespace messenger
 
     t_void async_process(t_chain chain) noexcept {
       for (auto item = chain.head; item; item = item->next()) {
-        //t_item_& ref = item->ref().ref<t_item_>();
         //messages.push_back(std::move(ref.msg));
       }
-
-//      chain.each([&](auto&& item) mutable {
-//        this->messages.push_back(t_message{std::move(item.ref<t_item_>().buf)});
-//      });
     }
   };
 
@@ -2709,10 +2742,10 @@ namespace messenger
   }
 
   t_bool is_group(t_err err, R_messenger_name name, r_messenger_scope scope,
-                  p_messenger_group_list group_list) {
+                  p_messenger_name_list name_list) {
     ERR_GUARD(err) {
       if (mr_)
-        return mr_->is_group(err, name, scope, group_list);
+        return mr_->is_group(err, name, scope, name_list);
       err = err::E_XXX;
     }
     return false;

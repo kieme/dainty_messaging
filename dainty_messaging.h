@@ -60,14 +60,13 @@ namespace messaging
   using r_messenger_name         = messenger::r_name;
   using R_messenger_name         = messenger::R_name;
   using R_messenger_password     = messenger::R_password;
-  using r_messenger_monitor_list = messenger::r_monitor_list;
-  using p_messenger_monitor_list = messenger::p_monitor_list;
-  using p_messenger_group_list   = messenger::p_group_list;
   using r_messenger_group_list   = messenger::r_group_list;
   using t_messenger_timer_params = messenger::t_timer_params;
   using R_messenger_timer_params = messenger::R_timer_params;
   using r_messenger_scope        = t_prefix<t_messenger_scope>::r_;
   using p_messenger_user         = t_prefix<t_messenger_user>::p_;
+  using t_messenger_name_list    = std::vector<t_messenger_name>;
+  using p_messenger_name_list    = t_prefix<t_messenger_name_list>::p_;
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -195,7 +194,7 @@ namespace messaging
                               t_messenger_scope);
   t_void destroy_group(t_err, R_password, R_messenger_name);
   t_bool is_group     (t_err, R_messenger_name, r_messenger_scope,
-                              p_messenger_group_list = nullptr);
+                              p_messenger_name_list = nullptr);
 
   t_void add_messenger_to_group(t_err, R_messenger_password,
                                        R_messenger_name name,
