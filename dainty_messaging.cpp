@@ -2307,8 +2307,7 @@ namespace messenger
       t_que_chain chain = que_client_.waitable_acquire(err);
       if (!err) {
         // XXX-now
-        t_any& any = chain.head->ref().any;
-        any.emplace<t_message>({0L}, std::move(msg));
+        chain.head->ref().any.emplace<t_message>({0L}, std::move(msg));
         que_client_.insert(err, chain);
       }
     }
