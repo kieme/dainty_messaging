@@ -49,6 +49,7 @@ namespace messaging
   using messenger::t_multiple_of_100ms;
   using messenger::t_messenger;
 
+  using x_message                = message::x_message;
   using t_messenger_params       = messenger::t_params;
   using r_messenger_params       = messenger::r_params;
   using t_messenger_scope        = messenger::t_scope;
@@ -215,6 +216,10 @@ namespace messaging
 
   t_void who_is(t_err, R_messenger_key, r_messenger_name,
                        p_bool group = nullptr, p_bool local = nullptr);
+
+///////////////////////////////////////////////////////////////////////////////
+
+  t_void post_message(t_err, R_messenger_key, x_message);
 
 ///////////////////////////////////////////////////////////////////////////////
 }

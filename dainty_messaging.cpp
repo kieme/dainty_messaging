@@ -2278,6 +2278,15 @@ namespace messenger
       cmd_client_.request(err, cmd);
     }
 
+    t_void post_message(r_err err, R_messenger_key key, x_message msg) {
+      t_que_chain chain = que_client_.waitable_acquire(err);
+      if (!err) {
+        // XXX-now
+        chain.head->ref().any.emplace<t_message>({0L}, std::move(msg));
+        que_client_.insert(err, chain);
+      }
+    }
+
     t_messenger_name get_name(r_err err, R_messenger_key id) {
       t_get_name_cmd_ cmd{id};
       cmd_client_.request(err, cmd);
@@ -2800,6 +2809,15 @@ namespace messenger
     ERR_GUARD(err) {
       if (mr_)
         mr_->who_is(err, key, name, group, local);
+      else
+        err = err::E_XXX;
+    }
+  }
+
+  t_void post_message(t_err err, R_messenger_key key, x_message msg) {
+    ERR_GUARD(err) {
+      if (mr_)
+        mr_->post_message(err, key, std::move(msg));
       else
         err = err::E_XXX;
     }
