@@ -1716,7 +1716,32 @@ namespace message
     }
 
     t_void forward_msgs(r_msgs_ msgs) {
-      // can print
+      for (auto& msg : msgs) {
+        auto key_params = get_key_params(message::read_dst(msg.second));
+        if (key_params.local) {
+          if (key_params.group) {
+            auto ctxt = grp_ctxts_.get(key_params.id);
+            if (ctxt) { // XXX - seq not checked
+            } else {
+              // trace and send back if it is in this process
+            }
+          } else {
+            auto ctxt = msgr_ctxts_.get(key_params.id);
+            if (ctxt) { // XXX - seq not checked
+              auto chain = ctxt->client.acquire();
+              chain.head->ref().emplace<t_message>({0L},
+                                                   std::move(msg.second));
+              auto errn = ctxt->client.insert(chain);
+              if (errn == INVALID) {
+              }
+            } else {
+              // trace and send back if it is in this process
+            }
+          }
+        } else {
+          // XXX- remote not supported
+        }
+      }
       msgs.clear();
     }
 
@@ -1807,13 +1832,11 @@ namespace message
       return false;
     }
 
-    t_void process_item(x_any any) {
-      t_message msg{std::move(any.ref<t_message>())};
-    }
-
     t_void process_chain(t_chain& chain) {
       for (auto item = chain.head; item; item = item->next())
-        process_item(std::move(item->ref().any));
+        msgs_.insert(
+          t_msgs_entry_{t_messenger_prio{0},
+                        std::move(item->ref().any.ref<t_message>())});
     }
 
     virtual t_void async_process(t_chain chain) noexcept override {
