@@ -25,6 +25,7 @@
 ******************************************************************************/
 
 #include <map>
+#include "dainty_named_terminal.h"
 #include "dainty_container_maybe.h"
 #include "dainty_container_freelist.h"
 #include "dainty_os_threading.h"
@@ -41,6 +42,7 @@
 using namespace dainty;
 using namespace dainty::container;
 using namespace dainty::named;
+using namespace dainty::named::terminal;
 using namespace dainty::mt;
 using namespace dainty::os;
 using namespace dainty::tracing;
@@ -1776,15 +1778,15 @@ namespace message
     }
 
     virtual t_void update(t_thd_err, r_pthread_attr) noexcept override {
-      printf("messaging: update\n");
+      t_out{P_cstr{"messaging: update"}};
     }
 
     virtual t_void prepare(t_thd_err) noexcept override {
-      printf("messaging: prepare\n");
+      t_out{P_cstr{"messaging: prepare"}};
     }
 
     virtual p_void run() noexcept override {
-      printf("messaging: run\n");
+      t_out{P_cstr{"messaging: run"}};
 
       err::t_err err;
       {
@@ -1809,25 +1811,25 @@ namespace message
     }
 
     virtual t_void may_reorder_events (r_event_infos) override {
-      printf("messaging: may_reorder_events\n");
+      t_out{P_cstr{"messaging: may_reorder_events"}};
     }
 
     virtual t_void notify_event_remove(r_event_info) override {
-      printf("messaging: notify_event_remove\n");
+      t_out{P_cstr{"messaging: notify_event_remove"}};
     }
 
     virtual t_quit notify_timeout(t_usec) override {
-      printf("messaging: notify_timeout\n");
+      t_out{P_cstr{"messaging: notify_timeout"}};
       return true; // not required
     }
 
     virtual t_quit notify_error(t_errn)  override {
-      printf("messaging: notify_error\n");
+      t_out{P_cstr{"messaging: notify_error"}};
       return true; // die
     }
 
     virtual t_quit notify_events_processed() override {
-      printf("messaging: notify_events_processed\n");
+      t_out{P_cstr{"messaging: notify_events_processed"}};
       data_.forward_msgs(msgs_);
       return false;
     }
@@ -1840,176 +1842,176 @@ namespace message
     }
 
     virtual t_void async_process(t_chain chain) noexcept override {
-      printf("messaging: recv\n");
+      t_out{P_cstr{"messaging: recv"}};
       process_chain(chain);
     }
 
     virtual t_void async_process(t_user, p_command) noexcept override {
-      printf("messaging: p_command\n");
+      t_out{P_cstr{"messaging: p_command"}};
     }
 
 ///////////////////////////////////////////////////////////////////////////////
 
     t_void process(err::t_err, r_update_params_cmd_) noexcept {
-      printf("messaging: r_update_params_cmd_\n");
+      t_out{P_cstr{"messaging: r_update_params_cmd_"}};
       //XXX- later
     }
 
     t_void process(err::t_err err, r_fetch_params_cmd_ cmd) noexcept {
-      printf("messaging: r_fetch_params_cmd_\n");
+      t_out{P_cstr{"messaging: r_fetch_params_cmd_"}};
       cmd.params = data_.params;
     }
 
     t_void process(err::t_err err, r_create_messenger_cmd_ cmd) noexcept {
-      printf("messaging: r_create_messenger_cmd_\n");
+      t_out{P_cstr{"messaging: r_create_messenger_cmd_"}};
       data_.add_messenger(err, msgs_, cmd.id, cmd.processor, cmd.name,
                           cmd.params);
     }
 
     t_void process(err::t_err err, r_destroy_messenger_cmd_ cmd) noexcept {
-      printf("messaging: r_destroy_messenger_cmd_\n");
+      t_out{P_cstr{"messaging: r_destroy_messenger_cmd_"}};
       data_.destroy_messenger(err, msgs_, cmd.id);
     }
 
     t_void process(err::t_err err, r_is_messenger_cmd_ cmd) noexcept {
-      printf("messaging: r_is_messenger_cmd_\n");
+      t_out{P_cstr{"messaging: r_is_messenger_cmd_"}};
       cmd.found = data_.is_messenger(err, cmd.name, cmd.params);
     }
 
     t_void process(err::t_err err, r_is_messenger_info_cmd_ cmd) noexcept {
-      printf("messaging: r_is_messenger_info_cmd_\n");
+      t_out{P_cstr{"messaging: r_is_messenger_info_cmd_"}};
       cmd.found = data_.is_messenger(err, cmd.name, cmd.info, cmd.clearstats);
     }
 
     t_void process(err::t_err, r_fetch_messengers_cmd_) noexcept {
-      printf("messaging: r_fetch_messengers_cmd_\n");
+      t_out{P_cstr{"messaging: r_fetch_messengers_cmd_"}};
       //XXX- later
     }
 
     t_void process(err::t_err err, r_create_group_cmd_ cmd) noexcept {
-      printf("messaging: r_create_group_cmd_\n");
+      t_out{P_cstr{"messaging: r_create_group_cmd_"}};
       data_.create_group(err, msgs_, cmd.password, cmd.name, cmd.scope);
     }
 
     t_void process(err::t_err err, r_destroy_group_cmd_ cmd) noexcept {
-      printf("messaging: r_destroy_group_cmd_\n");
+      t_out{P_cstr{"messaging: r_destroy_group_cmd_"}};
       data_.destroy_group(err, msgs_, cmd.password, cmd.name);
     }
 
     t_void process(err::t_err err, r_is_group_cmd_ cmd) noexcept {
-      printf("messaging: r_is_group_cmd_\n");
+      t_out{P_cstr{"messaging: r_is_group_cmd_"}};
       cmd.found = data_.is_messenger_group(err, cmd.name, cmd.scope,
                                            cmd.name_list);
     }
 
     t_void process(err::t_err err, r_add_messenger_to_group_cmd_ cmd) noexcept {
-      printf("messaging: r_add_messenger_to_group_cmd_\n");
+      t_out{P_cstr{"messaging: r_add_messenger_to_group_cmd_"}};
       data_.add_messenger_to_group(err, msgs_, cmd.password, cmd.name,
                                    cmd.group, cmd.prio, cmd.user);
     }
 
     t_void process(err::t_err err,
                    r_remove_messenger_from_group_cmd_ cmd) noexcept {
-      printf("messaging: r_destroy_messenger_from_group_cmd_\n");
+      t_out{P_cstr{"messaging: r_destroy_messenger_from_group_cmd_"}};
       data_.remove_messenger_from_group(err, cmd.password, cmd.name, cmd.group,
                                         cmd.user);
     }
 
     t_void process(err::t_err err, r_is_messenger_in_group_cmd_ cmd) noexcept {
-      printf("messaging: r_is_messenger_in_group_cmd_\n");
+      t_out{P_cstr{"messaging: r_is_messenger_in_group_cmd_"}};
       cmd.found = data_.is_messenger_in_group(err, cmd.name, cmd.group,
                                               cmd.user);
     }
 
     t_void process(err::t_err err, r_fetch_messenger_groups_cmd_ cmd) noexcept {
-      printf("messaging: r_fetch_messenger_groups_cmd_\n");
+      t_out{P_cstr{"messaging: r_fetch_messenger_groups_cmd_"}};
       //XXX- later
     }
 
     t_void process(err::t_err err, r_who_is_cmd_ cmd) noexcept {
-      printf("messaging: r_who_is_cmd_\n");
+      t_out{P_cstr{"messaging: r_who_is_cmd_"}};
       data_.who_is(err, cmd.key, cmd.name, cmd.group, cmd.local);
     }
 
     t_void process(err::t_err err, r_get_name_cmd_ cmd) noexcept {
-      printf("messaging: r_get_name_cmd_\n");
+      t_out{P_cstr{"messaging: r_get_name_cmd_"}};
       data_.get_messenger_name(err, cmd.name, cmd.id);
     }
 
     t_void process(err::t_err err, r_get_params_cmd_ cmd) noexcept {
-      printf("messaging: r_get_params_cmd_\n");
+      t_out{P_cstr{"messaging: r_get_params_cmd_"}};
       //XXX-later - big step
     }
 
     t_void process(err::t_err, r_update_scope_cmd_) noexcept {
-      printf("messaging: r_update_scope_cmd_\n");
+      t_out{P_cstr{"messaging: r_update_scope_cmd_"}};
       //XXX-later - big one
     }
 
     t_void process(err::t_err, r_update_alive_period_cmd_) noexcept {
-      printf("messaging: r_update_alive_period_cmd_\n");
+      t_out{P_cstr{"messaging: r_update_alive_period_cmd_"}};
       //XXX-now
     }
 
     t_void process(err::t_err, r_start_timer_cmd_) noexcept {
-      printf("messaging: r_start_timer_cmd_\n");
+      t_out{P_cstr{"messaging: r_start_timer_cmd_"}};
       //XXX-now
     }
 
     t_void process(err::t_err, r_stop_timer_cmd_) noexcept {
-      printf("messaging: r_stop_timer_cmd_\n");
+      t_out{P_cstr{"messaging: r_stop_timer_cmd_"}};
       //XXX-now
     }
 
     t_void process(err::t_err, r_query_timer_cmd_) noexcept {
-      printf("messaging: r_query_timer_cmd_\n");
+      t_out{P_cstr{"messaging: r_query_timer_cmd_"}};
       //XXX-now
     }
 
     t_void process(err::t_err err, r_add_to_group_cmd_ cmd) noexcept {
-      printf("messaging: r_add_to_group_cmd_\n");
+      t_out{P_cstr{"messaging: r_add_to_group_cmd_"}};
       data_.add_messenger_to_group(err, msgs_, cmd.password, cmd.id,
                                    cmd.group, cmd.prio, cmd.user);
     }
 
     t_void process(err::t_err err, r_remove_from_group_cmd_ cmd) noexcept {
-      printf("messaging: r_remove_from_group_cmd_\n");
+      t_out{P_cstr{"messaging: r_remove_from_group_cmd_"}};
       data_.remove_messenger_from_group(err, cmd.password, cmd.id, cmd.group,
                                         cmd.user);
     }
 
     t_void process(err::t_err, r_is_in_group_cmd_) noexcept {
-      printf("messaging: r_is_in_group_cmd_\n");
+      t_out{P_cstr{"messaging: r_is_in_group_cmd_"}};
       //XXX-later
     }
 
     t_void process(err::t_err, r_get_groups_cmd_) noexcept {
-      printf("messaging: r_get_groups_cmd_\n");
+      t_out{P_cstr{"messaging: r_get_groups_cmd_"}};
       //XXX-later
     }
 
     t_void process(err::t_err err, r_add_monitor_cmd_ cmd) noexcept {
-      printf("messaging: r_add_monitor_cmd_\n");
+      t_out{P_cstr{"messaging: r_add_monitor_cmd_"}};
       data_.add_monitor(err, msgs_, cmd.id, cmd.name, cmd.prio, cmd.user);
     }
 
     t_void process(err::t_err err, r_remove_monitor_cmd_ cmd) noexcept {
-      printf("messaging: r_remove_monitor_cmd_\n");
+      t_out{P_cstr{"messaging: r_remove_monitor_cmd_"}};
       data_.remove_monitor(err, cmd.id, cmd.name, cmd.user);
     }
 
     t_void process(err::t_err, r_is_monitored_cmd_) noexcept {
-      printf("messaging: r_is_monitored_cmd_\n");
+      t_out{P_cstr{"messaging: r_is_monitored_cmd_"}};
       //XXX-later
     }
 
     t_void process(err::t_err, r_get_monitored_cmd_) noexcept {
-      printf("messaging: r_get_monitored_cmd_\n");
+      t_out{P_cstr{"messaging: r_get_monitored_cmd_"}};
       //XXX-later
     }
 
     t_void process(err::t_err, r_clean_death_cmd_) noexcept {
-      printf("messaging: r_clean_death_cmd_\n");
+      t_out{P_cstr{"messaging: r_clean_death_cmd_"}};
       ev_cmd_ = QUIT_EVENT_LOOP;
     }
 
